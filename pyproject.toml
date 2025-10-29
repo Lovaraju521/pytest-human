@@ -1,0 +1,52 @@
+[build-system]
+requires = [
+  "setuptools>=61.0.0",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pytest-human"
+description = "A robot-like nested HTML test report"
+version = "0.1.0"
+readme = "README.rst"
+requires-python = ">=3.10"
+authors = [
+    { name = "Dan Ilan", email="dan.ilan@q.ai"},
+]
+maintainers = [
+    { name = "Dan Ilan", email="dan.ilan@q.ai"},
+]
+license = {file = "LICENSE"}
+classifiers = [
+    "Framework :: Pytest",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Testing",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "License :: OSI Approved :: Apache Software License",
+]
+dependencies = [
+    "pytest>=8.0.0",
+    "rich==14.*",
+]
+[project.urls]
+Repository = "https://github.com/jmpfar/pytest-human"
+[project.entry-points.pytest11]
+human = "pytest_human._hooks"
+
+[dependency-groups]
+dev = [
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.6.22",
+    "pytest-playwright==0.7.*",
+    "playwright==1.55.*"
+]

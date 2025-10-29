@@ -1,0 +1,10 @@
+site_name: pytest-human
+site_description: A robot-like nested HTML test report
+site_author: Dan Ilan
+
+theme: material
+
+repo_url: https://github.com/jmpfar/pytest-human
+
+nav:
+- Home: index.md

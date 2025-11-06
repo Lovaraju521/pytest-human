@@ -119,7 +119,7 @@ class HtmlLogPlugin:
         terminal.write("Test ")
         terminal.write(f"{item.name}", bold=True)
         terminal.write(" HTML log at ")
-        terminal.write(f"{log_path.as_uri()}", bold=True, cyan=True)
+        terminal.write(f"{log_path.resolve().as_uri()}", bold=True, cyan=True)
         terminal.line("")
 
         if flush:

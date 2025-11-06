@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 name = "pytest-human"
 description = "A robot-like nested HTML test report"
 version = "0.1.0"
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">=3.10"
 authors = [
     { name = "Dan Ilan", email="dan.ilan@q.ai"},
@@ -39,7 +39,7 @@ dependencies = [
     "rich==14.*",
 ]
 [project.urls]
-Repository = "https://github.com/jmpfar/pytest-human"
+Repository = "https://github.com/Q-cue-ai/pytest-human"
 [project.entry-points.pytest11]
 human = "pytest_human._hooks"
 

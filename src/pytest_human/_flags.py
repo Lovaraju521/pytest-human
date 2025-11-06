@@ -74,3 +74,14 @@ def register_flags(parser: pytest.Parser) -> None:
         type=Path,
         help="Custom directory to store HTML test logs, need to specify `--html-log-dir custom`.",
     )
+
+    group.addoption(
+        "--html-log-level",
+        type=str,
+        default=None,
+        help="""
+        Set the logging level for HTML test logs. Does not Override the root logger level.
+        If you need to override the root logger level, use the standard pytest `--log-level` option.
+        Example levels: TRACE, DEBUG, INFO, WARNING, ERROR, CRITICAL.
+        """,
+    )

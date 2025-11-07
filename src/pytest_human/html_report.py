@@ -1,3 +1,5 @@
+"""HTML log file formatter for pytest-human."""
+
 from __future__ import annotations
 
 import html
@@ -5,12 +7,13 @@ import logging
 import shutil
 import threading
 import time
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from types import TracebackType
-from typing import Iterator, List, Optional, TextIO, Type
+from typing import Optional, TextIO
 
 import pygments
 import pygments.formatters
@@ -18,7 +21,7 @@ from pygments import lexers
 from pygments.formatter import Formatter as PygmentsFormatter
 from pygments.lexer import Lexer as PygmentsLexer
 
-from pytest_human.code_style import ReportCodeStyle
+from pytest_human._code_style import _ReportCodeStyle
 from pytest_human.log import _SPAN_END_TAG, _SPAN_START_TAG, _SYNTAX_HIGHLIGHT_TAG
 
 
@@ -34,26 +37,22 @@ class _BlockData:
 
 
 class HtmlRecordFormatter(logging.Formatter):
-    """
-    Formatter to convert log records into HTML fragments.
-    """
+    """Formatter to convert log records into HTML fragments."""
 
     # The minimum log level that will be propagated to parent loggers
     MINIMUM_PROPAGATION_LEVEL = logging.ERROR
     DATE_FMT = "%H:%M:%S.%f"
 
-    def __init__(
-        self, code_formatter: PygmentsFormatter, code_lexer: PygmentsLexer
-    ) -> None:
+    def __init__(self, code_formatter: PygmentsFormatter, code_lexer: PygmentsLexer) -> None:
         super().__init__()
         self._lock = threading.Lock()
-        self._block_stack: List[_BlockData] = []
+        self._block_stack: list[_BlockData] = []
         self._block_id_counter: int = 0
         self._code_formatter = code_formatter
         self._code_lexer = code_lexer
 
     def format(self, record: logging.LogRecord) -> str:
-        """format a log record as an HTML fragment."""
+        """Format a log record as an HTML fragment."""
         # Check for special attributes set by our adapter
         with self._lock:
             if hasattr(record, _SPAN_START_TAG):
@@ -64,13 +63,9 @@ class HtmlRecordFormatter(logging.Formatter):
 
             return self._format_log_record(record)
 
-    def formatTime(
-        self, record: logging.LogRecord, datefmt: Optional[str] = None
-    ) -> str:  # noqa: N802
+    def formatTime(self, record: logging.LogRecord, datefmt: Optional[str] = None) -> str:  # noqa: N802
         """Unimplemented override from base class, use local method _format_time instead."""
-        raise NotImplementedError(
-            "formatTime is unimplemented, use _format_time instead."
-        )
+        raise NotImplementedError("formatTime is unimplemented, use _format_time instead.")
 
     def _format_time(self, record: logging.LogRecord) -> str:
         """Format the time of the log record."""
@@ -102,9 +97,7 @@ class HtmlRecordFormatter(logging.Formatter):
     def _get_message_html(self, record: logging.LogRecord) -> str:
         syntax_highlight = getattr(record, _SYNTAX_HIGHLIGHT_TAG, False)
         if syntax_highlight:
-            return pygments.highlight(
-                record.getMessage(), self._code_lexer, self._code_formatter
-            )
+            return pygments.highlight(record.getMessage(), self._code_lexer, self._code_formatter)
 
         return html.escape(super().format(record))
 
@@ -141,7 +134,7 @@ class HtmlRecordFormatter(logging.Formatter):
                 <table class="log-table">
         """
 
-    def log_level_to_css_class(self, level: int) -> str:
+    def _log_level_to_css_class(self, level: int) -> str:
         return f"log-level-{logging.getLevelName(level).lower()}"
 
     def _end_block(self) -> str:
@@ -151,7 +144,9 @@ class HtmlRecordFormatter(logging.Formatter):
         duration_ms = (time.monotonic() - block.start_time) * 1000
 
         result = "</table></td></tr>"
-        result += f"<script>finalizeSpan('{block.id}', '{block.duration_id}', {duration_ms});</script>"
+        result += (
+            f"<script>finalizeSpan('{block.id}', '{block.duration_id}', {duration_ms});</script>"
+        )
 
         parent = None
         if self._block_stack:
@@ -160,11 +155,12 @@ class HtmlRecordFormatter(logging.Formatter):
         if parent and block.severity_max >= self.MINIMUM_PROPAGATION_LEVEL:
             parent.severity_max = max(parent.severity_max, block.severity_max)
 
-        css_class = self.log_level_to_css_class(block.severity_max)
+        css_class = self._log_level_to_css_class(block.severity_max)
         result += f"<script>setSpanSeverity('{block.id}', '{css_class}');</script>"
         return result
 
     def end_all_blocks(self) -> str:
+        """End all open spans and return the HTML fragments."""
         result = ""
         with self._lock:
             while self._block_stack:
@@ -173,8 +169,7 @@ class HtmlRecordFormatter(logging.Formatter):
 
 
 class HtmlFileFormatter(logging.Formatter):
-    """
-    Formats log records into a complete HTML document.
+    """Formats log records into a complete HTML document.
 
     This deviates a bit from the logging.Formatter by adding a format_header and format_footer
     methods that should be called at the start and end of the file.
@@ -183,7 +178,7 @@ class HtmlFileFormatter(logging.Formatter):
     def __init__(self, title: str = "Test Log", description: str | None = "") -> None:
         super().__init__()
         self._code_formatter = pygments.formatters.HtmlFormatter(
-            style=ReportCodeStyle, nowrap=True
+            style=_ReportCodeStyle, nowrap=True
         )
         self._code_lexer = lexers.get_lexer_by_name("python")
         self._title = title
@@ -193,9 +188,11 @@ class HtmlFileFormatter(logging.Formatter):
         )
 
     def format(self, record: logging.LogRecord) -> str:
+        """Format a log record as an HTML fragment."""
         return self._record_formatter.format(record)
 
     def format_header(self) -> str:
+        """Format the header of the HTML document."""
         return f"""
         <!DOCTYPE html>
         <html lang="en">
@@ -250,6 +247,7 @@ class HtmlFileFormatter(logging.Formatter):
         """  # noqa: E501
 
     def format_footer(self) -> str:
+        """Format the footer of the HTML document."""
         result = ""
         result += self._record_formatter.end_all_blocks()
         result += "</table></div>"
@@ -265,7 +263,8 @@ class HtmlFileFormatter(logging.Formatter):
     def _get_css() -> str:
         return r"""
             body {
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                  Roboto, Helvetica, Arial, sans-serif;
                 background-color: #f0f2f5;
                 color: #24292e;
                 margin: 0;
@@ -381,7 +380,8 @@ class HtmlFileFormatter(logging.Formatter):
             }
             #search-counter {
                font-size: 13px;
-               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                Roboto, Helvetica, Arial, sans-serif;
                color: #57606a;
                padding-left: 10px;
                margin-left: 8px;
@@ -470,7 +470,8 @@ class HtmlFileFormatter(logging.Formatter):
 
             .msg-cell {
                 word-break: break-all;
-                font-family: Consolas, "SFMono-Regular", Menlo, Monaco, "Liberation Mono", "Courier New", monospace;
+                font-family: Consolas, "SFMono-Regular", Menlo, Monaco,
+                    "Liberation Mono", "Courier New", monospace;
                 white-space: pre-wrap;
             }
             .nested-block td {
@@ -786,9 +787,7 @@ class HtmlFileFormatter(logging.Formatter):
 
 
 class HtmlFileHandler(logging.Handler):
-    """
-    A logging handler that streams log records to a self-contained,
-    collapsible HTML file.
+    """A logging handler that streams log records to a self-contained, collapsible HTML file.
 
     Because of the streaming nature, we have an issue with updating information
     we don't know in advance, such as duration and severity of a block.
@@ -806,23 +805,22 @@ class HtmlFileHandler(logging.Handler):
         self._file.write(self._formatter.format_header())
 
     def setFormatter(self, fmt: logging.Formatter | None) -> None:  # noqa: N802
-        raise NotImplementedError(
-            "HtmlFileHandler does not support changing the formatter."
-        )
+        """HtmlFileHandler does not support changing the formatter."""
+        raise NotImplementedError("HtmlFileHandler does not support changing the formatter.")
 
     def __enter__(self) -> HtmlFileHandler:
         return self
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> None:
         self.close()
 
     @contextmanager
-    def locked(self) -> Iterator[None]:
+    def _locked(self) -> Iterator[None]:
         self.acquire()
         try:
             yield
@@ -830,17 +828,20 @@ class HtmlFileHandler(logging.Handler):
             self.release()
 
     def emit(self, record: logging.LogRecord) -> None:
+        """Write a log record to the HTML file."""
         html = self._formatter.format(record)
-        with self.locked():
+        with self._locked():
             self._file.write(html)
             self._file.flush()
 
     def flush(self) -> None:
-        with self.locked():
+        """Flush the HTML file."""
+        with self._locked():
             self._file.flush()
 
     def close(self) -> None:
-        with self.locked():
+        """Finalize and close the HTML file."""
+        with self._locked():
             if self._file and not self._file.closed:
                 self._file.write(self._formatter.format_footer())
                 self._file.close()
@@ -849,7 +850,7 @@ class HtmlFileHandler(logging.Handler):
     def relocate(self, new_path: str | Path) -> None:
         """Move the log file to a new location."""
         assert not self._file.closed, "Cannot relocate a closed HtmlFileHandler."
-        with self.locked():
+        with self._locked():
             self._file.close()
             new_path = Path(new_path)
             shutil.move(self.path, new_path)

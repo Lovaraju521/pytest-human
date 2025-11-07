@@ -1,3 +1,5 @@
+"""Pytest plugin to create HTML log files for each test."""
+
 from __future__ import annotations
 
 import inspect
@@ -14,7 +16,7 @@ from rich.pretty import pretty_repr
 
 from pytest_human._flags import HtmlLogLocationOption
 from pytest_human.html_report import HtmlFileHandler
-from pytest_human.log import SpanEndFilter, TestLogger, get_logger
+from pytest_human.log import TestLogger, _SpanEndFilter, get_logger
 
 
 class HtmlLogPlugin:
@@ -30,17 +32,15 @@ class HtmlLogPlugin:
 
     @classmethod
     def register(cls, config: pytest.Config) -> HtmlLogPlugin:
+        """Register the HTML log plugin in pytest plugin manager."""
         html_logger_plugin = HtmlLogPlugin()
-        config.pluginmanager.register(
-            html_logger_plugin, HtmlLogPlugin.HTML_LOG_PLUGIN_NAME
-        )
+        config.pluginmanager.register(html_logger_plugin, HtmlLogPlugin.HTML_LOG_PLUGIN_NAME)
         return html_logger_plugin
 
     @classmethod
     def unregister(cls, config: pytest.Config) -> None:
-        html_logger_plugin = config.pluginmanager.get_plugin(
-            HtmlLogPlugin.HTML_LOG_PLUGIN_NAME
-        )
+        """Unregister the HTML log plugin from pytest plugin manager."""
+        html_logger_plugin = config.pluginmanager.get_plugin(HtmlLogPlugin.HTML_LOG_PLUGIN_NAME)
         if html_logger_plugin:
             config.pluginmanager.unregister(html_logger_plugin)
 
@@ -66,8 +66,7 @@ class HtmlLogPlugin:
         """Create a test log path inside the given logs directory."""
         logs_dir = logs_dir.resolve()
         safe_test_name = re.sub(r"[^\w]", "_", item.name)[:35]
-        log_path = logs_dir / f"{safe_test_name}.html"
-        return log_path
+        return logs_dir / f"{safe_test_name}.html"
 
     def get_test_doc_string(self, item: pytest.Item) -> str | None:
         """Get the docstring of the test function, if any."""
@@ -97,17 +96,14 @@ class HtmlLogPlugin:
         if html_level := item.config.getoption("html_log_level"):
             log_level_name = html_level
 
-        level = logging.getLevelName(log_level_name.upper())
-        return level
+        return logging.getLevelName(log_level_name.upper())
 
     def get_log_location(self, item: pytest.Item) -> HtmlLogLocationOption:
         """Get the log location option for the test item."""
         return item.config.getoption("html_log_dir")
 
     @classmethod
-    def write_html_log_path(
-        cls, item: pytest.Item, log_path: Path, flush: bool = False
-    ) -> None:
+    def write_html_log_path(cls, item: pytest.Item, log_path: Path, flush: bool = False) -> None:
         """Log the HTML log path to the terminal."""
         terminal: pytest.TerminalReporter | None = item.config.pluginmanager.get_plugin(
             "terminalreporter"
@@ -129,9 +125,10 @@ class HtmlLogPlugin:
     def pytest_runtest_protocol(
         self, item: pytest.Item, nextitem: Optional[pytest.Item]
     ) -> Iterator[None]:
+        """Set up HTML log handler for the test and clean up afterwards."""
         root_logger = logging.getLogger()
         location = self.get_log_location(item)
-        log_path = self.get_log_path(item, location)
+        log_path = self._get_log_path(item, location)
 
         # Test directory logs are moved later in the test lifecycle
         if location != HtmlLogLocationOption.TEST_DIR:
@@ -156,7 +153,7 @@ class HtmlLogPlugin:
         for handler in root_logger.handlers:
             if handler is not html_handler:
                 # Remove span end messages noise from other handlers
-                handler.addFilter(SpanEndFilter())
+                handler.addFilter(_SpanEndFilter())
                 filtered_handlers.append(handler)
 
         yield
@@ -166,12 +163,12 @@ class HtmlLogPlugin:
         html_handler.close()
 
         for handler in filtered_handlers:
-            handler.removeFilter(SpanEndFilter())
+            handler.removeFilter(_SpanEndFilter())
 
         log_path = item.stash[self.log_path_key]
         self.write_html_log_path(item, log_path, flush=True)
 
-    def get_log_path(self, item: pytest.Item, location: HtmlLogLocationOption) -> Path:
+    def _get_log_path(self, item: pytest.Item, location: HtmlLogLocationOption) -> Path:
         match location:
             case HtmlLogLocationOption.SESSION_DIR:
                 return self.session_scoped_test_log_path(item)
@@ -185,11 +182,9 @@ class HtmlLogPlugin:
 
                 return self.create_test_log_path(item, log_path)
             case _:
-                raise NotImplementedError(
-                    f"{location} log location not implemented yet"
-                )
+                raise NotImplementedError(f"{location} log location not implemented yet")
 
-    def format_fixture_call(
+    def _format_fixture_call(
         self, fixturedef: pytest.FixtureDef, request: pytest.FixtureRequest
     ) -> str:
         s = f"{fixturedef.argname}("
@@ -212,12 +207,10 @@ class HtmlLogPlugin:
     def pytest_fixture_setup(
         self, fixturedef: pytest.FixtureDef, request: pytest.FixtureRequest
     ) -> Iterator[None]:
-        """
-        Hook to wrap all fixture functions with the logging decorator.
-        """
+        """Wrap all fixture functions with the logging decorator."""
 
         logger = get_logger(fixturedef.argname)
-        call_str = self.format_fixture_call(fixturedef, request)
+        call_str = self._format_fixture_call(fixturedef, request)
         with logger.span_debug(f"setup fixture {call_str}", highlight=True):
             result = yield
             try:
@@ -236,10 +229,7 @@ class HtmlLogPlugin:
     def relocate_test_log(self, request: pytest.FixtureRequest, tmp_path: Path) -> None:
         """Fixture to relocate the test log file to the test temporary directory if needed."""
         item = request.node
-        if (
-            item.stash.get(self.log_location_key, None)
-            != HtmlLogLocationOption.TEST_DIR
-        ):
+        if item.stash.get(self.log_location_key, None) != HtmlLogLocationOption.TEST_DIR:
             return
 
         new_log_path = tmp_path / "test.html"
@@ -258,9 +248,7 @@ class HtmlLogPlugin:
             yield
 
     @pytest.hookimpl(hookwrapper=True)
-    def pytest_runtest_teardown(
-        self, item: pytest.Item, nextitem: object
-    ) -> Iterator[None]:
+    def pytest_runtest_teardown(self, item: pytest.Item, nextitem: object) -> Iterator[None]:
         """Start a unified span covering all fixture cleanup (teardown) for this test item."""
 
         logger = self._get_test_logger(item)
@@ -270,9 +258,7 @@ class HtmlLogPlugin:
     def pytest_fixture_post_finalizer(
         self, fixturedef: pytest.FixtureDef, request: pytest.FixtureRequest
     ) -> None:
-        """
-        Hook to log when fixture finalizer finishes call.
-        """
+        """Log when fixture finalizer finishes call."""
 
         # This method is only called after the fixture finished.
         # We can log each cleanup fixture in its own span, but it is
@@ -292,6 +278,7 @@ class HtmlLogPlugin:
         call: pytest.CallInfo,
         report: pytest.TestReport,
     ) -> None:
+        """Log test exceptions in an error span."""
         logger = get_logger(node.name)
         excinfo = call.excinfo
         if excinfo is None:

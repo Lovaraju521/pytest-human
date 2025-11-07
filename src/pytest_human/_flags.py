@@ -1,5 +1,4 @@
 import enum
-import logging
 from pathlib import Path
 
 import pytest
@@ -37,13 +36,15 @@ def validate_dir_flags(config: pytest.Config) -> None:
 
     if log_dir != HtmlLogLocationOption.CUSTOM_DIR and custom_dir is not None:
         raise pytest.UsageError(
-            "The --html-custom-dir argument can only be used when --html-log-dir custom is specified."
+            "The --html-custom-dir argument can only be used when"
+            " --html-log-dir custom is specified."
         )
 
-    if log_dir == HtmlLogLocationOption.CUSTOM_DIR:
+    if log_dir == HtmlLogLocationOption.CUSTOM_DIR:  # noqa: SIM102
         if not custom_dir.exists() or not custom_dir.is_dir():
             raise pytest.UsageError(
-                f"The specified custom HTML log directory '{custom_dir}' does not exist or is not a directory."
+                f"The specified custom HTML log directory '{custom_dir}'"
+                " does not exist or is not a directory."
             )
 
 
@@ -67,7 +68,7 @@ def register_flags(parser: pytest.Parser) -> None:
         help="""
         Directory to store HTML test logs. Test scoped will be stored in the test temporary directory,
         while session scoped will be stored in the session temporary directory.
-        """,
+        """,  # noqa: E501
     )
     group.addoption(
         "--html-custom-dir",

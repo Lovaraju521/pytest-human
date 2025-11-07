@@ -15,10 +15,8 @@ from pygments.token import (
 )
 
 
-class ReportCodeStyle(Style):
-    """
-    A Pygments style that matches the report color theme.
-    """
+class _ReportCodeStyle(Style):
+    """A Pygments style that matches the report color theme."""
 
     name = "report-code-style"
 

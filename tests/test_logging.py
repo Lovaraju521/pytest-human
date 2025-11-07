@@ -151,7 +151,7 @@ def test_logging_span_simple(pytester: pytest.Pytester, page: Page) -> None:
     expand_button = span.get_by_role("button")
     expect(expand_button).to_have_text("[+]")
     expand_button.click()
-    expect(expand_button).to_have_text("[–]")
+    expect(expand_button).to_have_text("[–]")  # noqa: RUF001
 
     open_block = span.locator("xpath=following-sibling::tr[1]").first
     expect(open_block).to_contain_text("This is an INFO log message inside a span.")
@@ -229,7 +229,7 @@ def test_logging_log_method_call(pytester: pytest.Pytester, page: Page) -> None:
         def a(x):
             return b(x+1)
 
-        @log_method_call()                
+        @log_method_call()
         def b(x):
             return x + 1
 

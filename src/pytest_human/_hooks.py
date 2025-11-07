@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import pytest
 
 import pytest_human._flags as flags
@@ -13,16 +11,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 def pytest_cmdline_main(config: pytest.Config) -> None:
-    """
-    Sets up trace logging level early enough to be detected by pytest command line parsing.
-    """
+    """Set up trace logging level early enough to be detected by pytest command line parsing."""
     TestLogger.setup_trace_logging()
 
 
 def setup_logging_color(config: pytest.Config) -> None:
-    """
-    Sets up new trace level logging colors
-    """
+    """Set up new trace level logging colors."""
     logging_plugin = config.pluginmanager.get_plugin("logging-plugin")
     if logging_plugin is None:
         return

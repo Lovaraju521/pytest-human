@@ -1,0 +1,1 @@
+"""pytest-human plugin package."""

@@ -1,3 +1,5 @@
+"""Fixtures provided by pytest-human."""
+
 import pytest
 
 from pytest_human.log import TestLogger, get_logger
@@ -10,7 +12,7 @@ def _get_test_log(request: pytest.FixtureRequest) -> TestLogger:
 
 @pytest.fixture
 def human(request: pytest.FixtureRequest) -> TestLogger:
-    """Provides a human logger to the test."""
+    """Provide a human logger to the test."""
     return _get_test_log(request)
 
 

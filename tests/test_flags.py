@@ -3,12 +3,11 @@ from pathlib import Path
 from _pytest.config import ExitCode
 from _pytest.pytester import Pytester
 
-import tests.utils as utils
+from tests import utils
 
 
-def test_log_location_custom_does_not_exist(pytester: Pytester):
+def test_log_location_custom_does_not_exist(pytester: Pytester) -> None:
     """Make sure that pytest creates the log file in the right location."""
-
     pytester.makepyfile("""
         def test_something():
             assert True
@@ -25,14 +24,16 @@ def test_log_location_custom_does_not_exist(pytester: Pytester):
     assert result.ret == ExitCode.USAGE_ERROR
     result.stderr.fnmatch_lines(
         [
-            "ERROR: The specified custom HTML log directory '*' does not exist or is not a directory."
+            "ERROR: The specified custom HTML log directory '*' does not"
+            " exist or is not a directory."
         ]
     )
 
 
-def test_log_location_custom_expect_file_created(pytester: Pytester, tmp_path: Path):
+def test_log_location_custom_expect_file_created(
+    pytester: Pytester, tmp_path: Path
+) -> None:
     """Make sure that pytest creates the log file in the right location."""
-
     pytester.makepyfile("""
         def test_something():
             assert True
@@ -56,9 +57,8 @@ def test_log_location_custom_expect_file_created(pytester: Pytester, tmp_path: P
     assert log_path.is_file()
 
 
-def test_log_location_test_expect_file_created(pytester: Pytester):
+def test_log_location_test_expect_file_created(pytester: Pytester) -> None:
     """Make sure that pytest creates the log file in the right location."""
-
     pytester.makepyfile("""
         def test_something():
             assert True
@@ -74,9 +74,8 @@ def test_log_location_test_expect_file_created(pytester: Pytester):
     assert log_path.is_file()
 
 
-def test_log_location_session_expect_file_created(pytester: Pytester):
+def test_log_location_session_expect_file_created(pytester: Pytester) -> None:
     """Make sure that pytest creates the log file in the right location."""
-
     pytester.makepyfile("""
         def test_something():
             assert True

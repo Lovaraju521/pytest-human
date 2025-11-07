@@ -1,9 +1,11 @@
+"""Custom logging utilities for pytest-human."""
+
 import functools
 import inspect
 import logging
-from collections.abc import Iterator
-from contextlib import contextmanager
-from typing import Any, Callable, ContextManager, MutableMapping, Optional
+from collections.abc import Callable, Iterator, MutableMapping
+from contextlib import AbstractContextManager, contextmanager
+from typing import Any, Optional
 
 from rich.pretty import pretty_repr
 
@@ -16,9 +18,7 @@ _HIGHLIGHT_EXTRA = {_SYNTAX_HIGHLIGHT_TAG: True}
 
 
 class TestLogger(logging.LoggerAdapter):
-    """
-    Custom logger class that adds a trace method, supports for spans and syntax highlighting
-    """
+    """Custom logger class that adds a trace method, support for spans and syntax highlighting."""
 
     __test__ = False
     TRACE = TRACE_LEVEL_NUM
@@ -32,7 +32,7 @@ class TestLogger(logging.LoggerAdapter):
         message: str,
         args: tuple,
         highlight: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Central method to handle the highlighting logic."""
         if self.isEnabledFor(level):
@@ -43,30 +43,43 @@ class TestLogger(logging.LoggerAdapter):
             self._log(level, message, args, **kwargs)
 
     def process(
-        self, msg: Any, kwargs: MutableMapping[str, Any]
-    ) -> tuple[Any, MutableMapping[str, Any]]:  # noqa: ANN401
-        # pipethrough our custom extra fields, and prevent overwriting by class level extra
+        self,
+        msg: Any,
+        kwargs: MutableMapping[str, Any],
+    ) -> tuple[Any, MutableMapping[str, Any]]:
+        """Pass extra fields to the log record.
+
+        The logging.LoggerAdapter.process method overwrites the log record
+        extra fields if we don't handle them here.
+        """
         return msg, kwargs
 
-    def emit(self, log_level: int, message: str, *args, **kwargs) -> None:
+    def emit(self, log_level: int, message: str, *args: Any, **kwargs: Any) -> None:
+        """Emit a log message at the specified log level."""
         self._log_with_highlight(log_level, message, args, **kwargs)
 
-    def trace(self, message: str, *args, highlight: bool = False, **kwargs) -> None:
+    def trace(self, message: str, *args: Any, highlight: bool = False, **kwargs: Any) -> None:
+        """Log a TRACE message."""
         self._log_with_highlight(TRACE_LEVEL_NUM, message, args, highlight, **kwargs)
 
-    def debug(self, message: str, *args, highlight: bool = False, **kwargs) -> None:
+    def debug(self, message: str, *args: Any, highlight: bool = False, **kwargs: Any) -> None:
+        """Log a DEBUG message."""
         self._log_with_highlight(logging.DEBUG, message, args, highlight, **kwargs)
 
-    def info(self, message: str, *args, highlight: bool = False, **kwargs) -> None:
+    def info(self, message: str, *args: Any, highlight: bool = False, **kwargs: Any) -> None:
+        """Log an INFO message."""
         self._log_with_highlight(logging.INFO, message, args, highlight, **kwargs)
 
-    def warning(self, message: str, *args, highlight: bool = False, **kwargs) -> None:
+    def warning(self, message: str, *args: Any, highlight: bool = False, **kwargs: Any) -> None:
+        """Log a WARNING message."""
         self._log_with_highlight(logging.WARNING, message, args, highlight, **kwargs)
 
-    def error(self, message: str, *args, highlight: bool = False, **kwargs) -> None:
+    def error(self, message: str, *args: Any, highlight: bool = False, **kwargs: Any) -> None:
+        """Log an ERROR message."""
         self._log_with_highlight(logging.ERROR, message, args, highlight, **kwargs)
 
-    def critical(self, message: str, *args, highlight: bool = False, **kwargs) -> None:
+    def critical(self, message: str, *args: Any, highlight: bool = False, **kwargs: Any) -> None:
+        """Log a CRITICAL message."""
         self._log_with_highlight(logging.CRITICAL, message, args, highlight, **kwargs)
 
     @contextmanager
@@ -76,12 +89,12 @@ class TestLogger(logging.LoggerAdapter):
         message: str,
         highlight: bool = False,
         extra: Optional[dict[str, Any]] = None,
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> Iterator[None]:
-        """
-        Creates a nested logging span.
-        This is a logging message that can be expanded/collapsed in the HTML log viewer.
+        """Create a nested logging span.
+
+        A span is a logging message that can be expanded/collapsed in the HTML log viewer.
         """
         extra = extra or {}
         if highlight:
@@ -98,53 +111,55 @@ class TestLogger(logging.LoggerAdapter):
         finally:
             self.log(log_level, "", extra={_SPAN_END_TAG: True})
 
-    def span_trace(self, message: str, *args, **kwargs) -> ContextManager[None]:
-        """
-        Creates a nested TRACE logging span.
-        This is a logging message that can be expanded/collapsed in the HTML log viewer.
+    def span_trace(self, message: str, *args: Any, **kwargs: Any) -> AbstractContextManager[None]:
+        """Create a nested TRACE logging span.
 
+        This is a logging message that can be expanded/collapsed in the HTML log viewer.
         Using TRACE level requires enabling TRACE logging via TestLogger.setup_trace_logging()
         """
         return self.span(TRACE_LEVEL_NUM, message, *args, **kwargs)
 
-    def span_debug(self, message: str, *args, **kwargs) -> ContextManager[None]:
-        """
-        Creates a nested DEBUG logging span.
+    def span_debug(self, message: str, *args: Any, **kwargs: Any) -> AbstractContextManager[None]:
+        """Create a nested DEBUG logging span.
+
         This is a logging message that can be expanded/collapsed in the HTML log viewer.
         """
         return self.span(logging.DEBUG, message, *args, **kwargs)
 
-    def span_info(self, message: str, *args, **kwargs) -> ContextManager[None]:
-        """
-        Creates a nested INFO logging span.
+    def span_info(self, message: str, *args: Any, **kwargs: Any) -> AbstractContextManager[None]:
+        """Create a nested INFO logging span.
+
         This is a logging message that can be expanded/collapsed in the HTML log viewer.
         """
         return self.span(logging.INFO, message, *args, **kwargs)
 
-    def span_warning(self, message: str, *args, **kwargs) -> ContextManager[None]:
-        """
-        Creates a nested INFO logging span.
+    def span_warning(self, message: str, *args: Any, **kwargs: Any) -> AbstractContextManager[None]:
+        """Create a nested WARNING logging span.
+
         This is a logging message that can be expanded/collapsed in the HTML log viewer.
         """
         return self.span(logging.WARNING, message, *args, **kwargs)
 
-    def span_error(self, message: str, *args, **kwargs) -> ContextManager[None]:
-        """
-        Creates a nested ERROR logging span.
+    def span_error(self, message: str, *args: Any, **kwargs: Any) -> AbstractContextManager[None]:
+        """Create a nested ERROR logging span.
+
         This is a logging message that can be expanded/collapsed in the HTML log viewer.
         """
         return self.span(logging.ERROR, message, *args, **kwargs)
 
-    def span_critical(self, message: str, *args, **kwargs) -> ContextManager[None]:
-        """
-        Creates a nested CRITICAL logging span.
+    def span_critical(
+        self, message: str, *args: Any, **kwargs: Any
+    ) -> AbstractContextManager[None]:
+        """Create a nested CRITICAL logging span.
+
         This is a logging message that can be expanded/collapsed in the HTML log viewer.
         """
         return self.span(logging.CRITICAL, message, *args, **kwargs)
 
     @classmethod
     def setup_trace_logging(cls) -> None:
-        """
+        """Add the TRACE logging level to the logging module.
+
         Run this early enough to setup the TRACE log level
         For example the pytest_cmdline_main hook under the top-level conftest.py
         """
@@ -152,17 +167,19 @@ class TestLogger(logging.LoggerAdapter):
         logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
 
 
-class SpanEndFilter(logging.Filter):
+class _SpanEndFilter(logging.Filter):
     """A logging filter that blocks log records marking the end of a span."""
 
     def filter(self, record: logging.LogRecord) -> bool:
+        """Filter out span end log records.
+
+        These can spam the log with non-HTML log handlers.
+        """
         return not getattr(record, _SPAN_END_TAG, False)
 
 
-def get_class_name(func: Callable) -> str:
-    """
-    Gets a class name from a method or function.
-    """
+def _get_class_name(func: Callable) -> str:
+    """Get a class name from a method or function."""
     if hasattr(func, "__self__"):
         return func.__self__.__class__.__name__
 
@@ -181,7 +198,7 @@ def _format_call_string(func: Callable, args: tuple, kwargs: dict) -> str:
     bound_args = sig.bind(*args, **kwargs)
     bound_args.apply_defaults()
 
-    class_name = get_class_name(func)
+    class_name = _get_class_name(func)
     func_name = func.__name__
     params = []
     for name, value in bound_args.arguments.items():
@@ -193,10 +210,10 @@ def _format_call_string(func: Callable, args: tuple, kwargs: dict) -> str:
 
 
 def log_method_call(*, log_level: int = logging.INFO, suppress_return: bool = False):  # noqa: ANN201
-    """
-    Decorator to log method calls with parameters and return values.
+    """Decorate log method calls with parameters and return values.
 
-    :param log_level: The log level that will be used for logging. Errors are always logged with ERROR level.
+    :param log_level: The log level that will be used for logging.
+                      Errors are always logged with ERROR level.
     :param suppress_return: If True, do not log the return value.
     """
 
@@ -207,7 +224,7 @@ def log_method_call(*, log_level: int = logging.INFO, suppress_return: bool = Fa
         if is_async:
 
             @functools.wraps(func)
-            async def async_wrapper(*args, **kwargs):  # noqa: ANN202
+            async def async_wrapper(*args: Any, **kwargs: Any):  # noqa: ANN202
                 if not logger.isEnabledFor(log_level):
                     return await func(*args, **kwargs)
 
@@ -215,12 +232,8 @@ def log_method_call(*, log_level: int = logging.INFO, suppress_return: bool = Fa
                 with logger.span(log_level, f"async {func_str}", highlight=True):
                     try:
                         result = await func(*args, **kwargs)
-                        result_str = (
-                            "<suppressed>" if suppress_return else pretty_repr(result)
-                        )
-                        logger.debug(
-                            f"async {func_str} -> {result_str}", highlight=True
-                        )
+                        result_str = "<suppressed>" if suppress_return else pretty_repr(result)
+                        logger.debug(f"async {func_str} -> {result_str}", highlight=True)
                         return result
                     except Exception as e:
                         logger.error(f"async {func_str} !-> {e!r}", highlight=True)
@@ -228,34 +241,29 @@ def log_method_call(*, log_level: int = logging.INFO, suppress_return: bool = Fa
 
             return async_wrapper
 
-        else:
+        @functools.wraps(func)
+        def sync_wrapper(*args: Any, **kwargs: Any):  # noqa: ANN202
+            if not logger.isEnabledFor(log_level):
+                return func(*args, **kwargs)
 
-            @functools.wraps(func)
-            def sync_wrapper(*args, **kwargs):  # noqa: ANN202
-                if not logger.isEnabledFor(log_level):
-                    return func(*args, **kwargs)
+            func_str = _format_call_string(func, args, kwargs)
+            with logger.span(log_level, func_str, highlight=True):
+                try:
+                    result = func(*args, **kwargs)
+                    result_str = "<suppressed>" if suppress_return else pretty_repr(result)
+                    logger.debug(f"{func_str} -> {result_str}", highlight=True)
+                    return result
+                except Exception as e:
+                    logger.error(f"{func_str} !-> {e!r}", highlight=True)
+                    raise e
 
-                func_str = _format_call_string(func, args, kwargs)
-                with logger.span(log_level, func_str, highlight=True):
-                    try:
-                        result = func(*args, **kwargs)
-                        result_str = (
-                            "<suppressed>" if suppress_return else pretty_repr(result)
-                        )
-                        logger.debug(f"{func_str} -> {result_str}", highlight=True)
-                        return result
-                    except Exception as e:
-                        logger.error(f"{func_str} !-> {e!r}", highlight=True)
-                        raise e
-
-            return sync_wrapper
+        return sync_wrapper
 
     return decorator
 
 
 def get_logger(name: str) -> TestLogger:
-    """
-    Returns a logger customized for our tests
+    """Return a logger customized for our tests.
 
     :param name: Name of the logger, typically __name__
     """

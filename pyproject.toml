@@ -17,6 +17,7 @@ maintainers = [
     { name = "Dan Ilan", email="dan.ilan@q.ai"},
 ]
 license = {file = "LICENSE"}
+
 classifiers = [
     "Framework :: Pytest",
     "Development Status :: 4 - Beta",
@@ -34,12 +35,15 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
     "License :: OSI Approved :: Apache Software License",
 ]
+
 dependencies = [
     "pytest>=8.0.0",
     "rich==14.*",
 ]
+
 [project.urls]
 Repository = "https://github.com/Q-cue-ai/pytest-human"
+
 [project.entry-points.pytest11]
 human = "pytest_human._hooks"
 
@@ -50,3 +54,59 @@ dev = [
     "pytest-playwright==0.7.*",
     "playwright==1.55.*"
 ]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "PL",
+    "W",
+    "E",
+    "F",
+    "Q",
+    "I",
+    "D",
+    "N",
+    "UP",
+    "C4",
+    "ISC",
+    "ASYNC",
+    "SLF",
+    "SIM",
+    "TID",
+    "PTH",
+    "ERA",
+    "RSE",
+    "INP",
+    "PERF",
+    "FURB",
+    "ANN",
+    "RUF",
+    "NPY",
+    "FLY",
+    "PT",
+    "ICN",
+    "RET",
+    "TD",
+    "S",
+    "N",
+    "FBT",
+]
+ignore= [
+    "S101", # Allow asserts
+    "D105", # no need to document magic methods
+    "D107", # No need to document __init__
+    "D202", # no-blank-lines-after-function-docstring
+    "D203", # incorrect-blank-line-before-class
+    "D213", # multi-line-summary-second-line
+    "FBT001", # allow boolean parameters
+    "FBT002", # allow default boolean parameters 
+    "UP045", # allow use of Optional types
+    "ANN401", # allow use of Any type hints
+    "RET504", # Unnecessary assignment before return
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D", "PLR2004"]
+"tests/test_example.py" = ["ANN"]

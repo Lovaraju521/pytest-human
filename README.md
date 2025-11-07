@@ -75,7 +75,6 @@ You can control/command-click the path to open the file, or find it in the files
 
 By the default the logs can be found in the session temp directory under the `session_logs` directory.
 
----
 
 ## Command Line Options
 
@@ -123,8 +122,6 @@ Setting the log level is critical, especially in the root log level as a lot of 
 Setting the root log level is taken care of by pytest `--log-level` settings.
 
 Available log levels: `TRACE`, `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`
-
----
 
 ## Logger API
 
@@ -192,8 +189,6 @@ Available span methods:
 - `span_error(message)` - ERROR level span
 - `span_critical(message)` - CRITICAL level span
 
----
-
 ## Method Tracing
 
 ```python
@@ -224,7 +219,6 @@ By adding the `@log_method_call` decorator, the method will be
 automatically logged when called and finished executing. The call
 will be placed in a nested span, which will also include all further logging inside the function scope.
 
----
 
 ## TRACE Logging
 
@@ -241,7 +235,6 @@ Run with trace level:
 pytest --enable-html-log --log-level trace
 ```
 
----
 
 ## HTML Report Features
 
@@ -296,7 +289,6 @@ def test_programmatic_logger():
     logger.info("Custom logger")
 ```
 
----
 
 ## Development
 
@@ -319,13 +311,11 @@ pytest --cov=pytest_human
 mkdocs serve
 ```
 
----
 
 ## License
 
 Distributed under the Apache Software License 2.0. See `LICENSE` for more information.
 
----
 
 ## Links
 

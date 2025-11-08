@@ -14,7 +14,7 @@ import pytest
 from _pytest.nodes import Node
 from rich.pretty import pretty_repr
 
-from pytest_human._flags import HtmlLogLocationOption
+from pytest_human._flags import is_output_to_test_tmp
 from pytest_human.html_report import HtmlFileHandler
 from pytest_human.log import TestLogger, _SpanEndFilter, get_logger
 
@@ -23,7 +23,6 @@ class HtmlLogPlugin:
     """Pytest plugin to create HTML log files for each test."""
 
     HTML_LOG_PLUGIN_NAME = "html-log-plugin"
-    log_location_key = pytest.StashKey[HtmlLogLocationOption]()
     log_path_key = pytest.StashKey[Path]()
     html_log_handler_key = pytest.StashKey[HtmlFileHandler]()
 
@@ -98,10 +97,6 @@ class HtmlLogPlugin:
 
         return logging.getLevelName(log_level_name.upper())
 
-    def get_log_location(self, item: pytest.Item) -> HtmlLogLocationOption:
-        """Get the log location option for the test item."""
-        return item.config.getoption("html_log_dir")
-
     @classmethod
     def write_html_log_path(cls, item: pytest.Item, log_path: Path, flush: bool = False) -> None:
         """Log the HTML log path to the terminal."""
@@ -127,14 +122,12 @@ class HtmlLogPlugin:
     ) -> Iterator[None]:
         """Set up HTML log handler for the test and clean up afterwards."""
         root_logger = logging.getLogger()
-        location = self.get_log_location(item)
-        log_path = self._get_log_path(item, location)
+        log_path = self._get_log_path(item)
 
         # Test directory logs are moved later in the test lifecycle
-        if location != HtmlLogLocationOption.TEST_DIR:
+        if not is_output_to_test_tmp(item.config):
             self.write_html_log_path(item, log_path, flush=True)
 
-        item.stash[self.log_location_key] = location
         item.stash[self.log_path_key] = log_path
 
         level = self.get_log_level(item)
@@ -168,22 +161,16 @@ class HtmlLogPlugin:
         log_path = item.stash[self.log_path_key]
         self.write_html_log_path(item, log_path, flush=True)
 
-    def _get_log_path(self, item: pytest.Item, location: HtmlLogLocationOption) -> Path:
-        match location:
-            case HtmlLogLocationOption.SESSION_DIR:
-                return self.session_scoped_test_log_path(item)
-            case HtmlLogLocationOption.TEST_DIR:
-                # Will be transferred on test setup to the correct location
-                return self.session_scoped_test_log_path(item)
-            case HtmlLogLocationOption.CUSTOM_DIR:
-                log_path = item.config.getoption("html_custom_dir")
-                if log_path is None:
-                    raise ValueError("Custom log directory not specified")
+    def _get_log_path(self, item: pytest.Item) -> Path:
+        if custom_dir := item.config.getoption("html_output_dir"):
+            custom_dir.resolve().mkdir(parents=True, exist_ok=True)
+            return self.get_test_log_path(item, custom_dir)
 
-                log_path.resolve().mkdir(parents=True, exist_ok=True)
-                return self.get_test_log_path(item, log_path)
-            case _:
-                raise NotImplementedError(f"{location} log location not implemented yet")
+        if item.config.getoption("html_use_test_tmp"):
+            # Will be transferred on test setup to the correct location
+            return self.session_scoped_test_log_path(item)
+
+        return self.session_scoped_test_log_path(item)
 
     def _format_fixture_call(
         self, fixturedef: pytest.FixtureDef, request: pytest.FixtureRequest
@@ -230,7 +217,7 @@ class HtmlLogPlugin:
     def relocate_test_log(self, request: pytest.FixtureRequest, tmp_path: Path) -> None:
         """Fixture to relocate the test log file to the test temporary directory if needed."""
         item = request.node
-        if item.stash.get(self.log_location_key, None) != HtmlLogLocationOption.TEST_DIR:
+        if not is_output_to_test_tmp(item.config):
             return
 
         new_log_path = tmp_path / "test.html"

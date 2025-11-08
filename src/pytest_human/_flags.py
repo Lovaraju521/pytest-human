@@ -1,52 +1,34 @@
-import enum
+import warnings
 from pathlib import Path
 
 import pytest
 
 
-class HtmlLogLocationOption(enum.Enum):
-    SESSION_DIR = "session"
-    """
-    Store all test logs in a logs directory inside the session temporary directory.
-    """
+def _validate_dir_flags(config: pytest.Config) -> None:
+    custom_dir = config.getoption("html_output_dir")
+    use_test_tmp = config.getoption("html_use_test_tmp")
 
-    TEST_DIR = "test"
-    """
-    Store each test log in a separate temporary directory for the test.
-    """
-
-    CUSTOM_DIR = "custom"
-    """
-    Store all test logs in a user-specified directory. The directory is specified via the
-    --html-log-dir command line option.
-    """
-
-    def __str__(self) -> str:
-        return self.value
-
-
-def validate_dir_flags(config: pytest.Config) -> None:
-    custom_dir: Path = config.option.html_custom_dir
-    log_dir = config.option.html_log_dir
-
-    if log_dir == HtmlLogLocationOption.CUSTOM_DIR and custom_dir is None:
-        raise pytest.UsageError(
-            "The --html-custom-dir argument is required when --html-log-dir custom is specified."
+    if custom_dir is not None and use_test_tmp:
+        warnings.warn(
+            pytest.PytestConfigWarning(
+                "The --html-output-dir will override the --html-use-test-tmp option."
+            )
         )
 
-    if log_dir != HtmlLogLocationOption.CUSTOM_DIR and custom_dir is not None:
-        raise pytest.UsageError(
-            "The --html-custom-dir argument can only be used when"
-            " --html-log-dir custom is specified."
-        )
+
+def is_output_to_test_tmp(config: pytest.Config) -> bool:
+    if config.getoption("html_output_dir"):
+        return False
+
+    return config.getoption("html_use_test_tmp")
 
 
 def validate_flags(config: pytest.Config) -> None:
-    validate_dir_flags(config)
+    _validate_dir_flags(config)
 
 
 def register_flags(parser: pytest.Parser) -> None:
-    group = parser.getgroup("terminal reporting")
+    group = parser.getgroup("human")
     group.addoption(
         "--enable-html-log",
         action="store_true",
@@ -54,19 +36,21 @@ def register_flags(parser: pytest.Parser) -> None:
         help="enable HTML nested test report.",
     )
     group.addoption(
-        "--html-log-dir",
-        type=HtmlLogLocationOption,
-        choices=HtmlLogLocationOption,
-        default=HtmlLogLocationOption.SESSION_DIR,
+        "--html-use-test-tmp",
+        action="store_true",
+        default=False,
         help="""
-        Directory to store HTML test logs. Test scoped will be stored in the test temporary directory,
-        while session scoped will be stored in the session temporary directory.
-        """,  # noqa: E501
+        Stores HTML test logs in each test's temporary directory instead of the default session-wide
+        temporary directory.
+        """,
     )
     group.addoption(
-        "--html-custom-dir",
+        "--html-output-dir",
         type=Path,
-        help="Custom directory to store HTML test logs, need to specify `--html-log-dir custom`.",
+        help="""
+        If present, store all HTML test logs in the specified directory.
+        Creates the directory if it does not exist.
+        """,
     )
 
     group.addoption(

@@ -20,8 +20,7 @@ def test_log_location_custom_does_not_exist_expect_dir_created(
 
     result = pytester.runpytest(
         "--enable-html-log",
-        "--html-log-dir=custom",
-        f"--html-custom-dir={custom_dir.as_posix()}",
+        f"--html-output-dir={custom_dir.as_posix()}",
     )
 
     assert result.ret == ExitCode.OK
@@ -43,8 +42,7 @@ def test_log_location_custom_expect_file_created(pytester: Pytester, tmp_path: P
 
     result = pytester.runpytest(
         "--enable-html-log",
-        "--html-log-dir=custom",
-        f"--html-custom-dir={custom_dir.as_posix()}",
+        f"--html-output-dir={custom_dir.as_posix()}",
     )
 
     assert result.ret == ExitCode.OK
@@ -61,7 +59,7 @@ def test_log_location_test_expect_file_created(pytester: Pytester) -> None:
             assert True
     """)
 
-    result = pytester.runpytest("--enable-html-log", "--html-log-dir=test")
+    result = pytester.runpytest("--enable-html-log", "--html-use-test-tmp")
 
     assert result.ret == ExitCode.OK
 
@@ -77,7 +75,9 @@ def test_log_location_session_expect_file_created(pytester: Pytester) -> None:
             assert True
     """)
 
-    result = pytester.runpytest("--enable-html-log", "--html-log-dir=session")
+    result = pytester.runpytest(
+        "--enable-html-log",
+    )
 
     assert result.ret == ExitCode.OK
     log_path = utils.find_test_log_location(result)

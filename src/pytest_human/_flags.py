@@ -40,13 +40,6 @@ def validate_dir_flags(config: pytest.Config) -> None:
             " --html-log-dir custom is specified."
         )
 
-    if log_dir == HtmlLogLocationOption.CUSTOM_DIR:  # noqa: SIM102
-        if not custom_dir.exists() or not custom_dir.is_dir():
-            raise pytest.UsageError(
-                f"The specified custom HTML log directory '{custom_dir}'"
-                " does not exist or is not a directory."
-            )
-
 
 def validate_flags(config: pytest.Config) -> None:
     validate_dir_flags(config)
@@ -81,7 +74,7 @@ def register_flags(parser: pytest.Parser) -> None:
         type=str,
         default=None,
         help="""
-        Set the logging level for HTML test logs. Does not Override the root logger level.
+        Set the logging level for HTML test logs. Does not override the root logger level.
         If you need to override the root logger level, use the standard pytest `--log-level` option.
         Example levels: TRACE, DEBUG, INFO, WARNING, ERROR, CRITICAL.
         """,

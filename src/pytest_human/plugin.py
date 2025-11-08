@@ -59,10 +59,10 @@ class HtmlLogPlugin:
     def session_scoped_test_log_path(cls, item: pytest.Item) -> Path:
         """Get the session-scoped test log path."""
         logs_dir = cls.get_session_scoped_logs_dir(item)
-        return cls.create_test_log_path(item, logs_dir)
+        return cls.get_test_log_path(item, logs_dir)
 
     @staticmethod
-    def create_test_log_path(item: pytest.Item, logs_dir: Path) -> Path:
+    def get_test_log_path(item: pytest.Item, logs_dir: Path) -> Path:
         """Create a test log path inside the given logs directory."""
         logs_dir = logs_dir.resolve()
         safe_test_name = re.sub(r"[^\w]", "_", item.name)[:35]
@@ -180,7 +180,8 @@ class HtmlLogPlugin:
                 if log_path is None:
                     raise ValueError("Custom log directory not specified")
 
-                return self.create_test_log_path(item, log_path)
+                log_path.resolve().mkdir(parents=True, exist_ok=True)
+                return self.get_test_log_path(item, log_path)
             case _:
                 raise NotImplementedError(f"{location} log location not implemented yet")
 

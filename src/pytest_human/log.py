@@ -262,6 +262,69 @@ def log_method_call(*, log_level: int = logging.INFO, suppress_return: bool = Fa
     return decorator
 
 
+def _locate_function(func: Callable) -> tuple[Any, str]:
+    module = inspect.getmodule(func)
+    if module is None:
+        raise ValueError(
+            f"Cannot patch module for {func} Could not determine the module."
+            " It might be dynamically created."
+        )
+
+    qualname = func.__qualname__
+    parts = qualname.split(".")
+
+    container = module
+    for part in parts[:-1]:
+        # A very extreme edge case, where a function is defined inside another function
+        # and returned as a closure.
+        if part == "<locals>":
+            raise ValueError(f"Cannot patch {qualname}: it is a local function.")
+        container = getattr(container, part)
+
+    method_name = parts[-1]
+    return container, method_name
+
+
+def _patch_method_logger(target: Callable, **kwargs: Any) -> None:
+    """Patch a method or function to log its calls using log_method_call decorator.
+
+    This is useful to log 3rd party library methods without modifying their source code.
+    """
+    if getattr(target, "_is_patched_logger", False):
+        logging.warning(f"Target {target.__qualname__} is already patched for logging.")
+        return
+
+    container, method_name = _locate_function(target)
+
+    # 3. Apply decorator and patch
+    decorated = log_method_call(**kwargs)(target)
+    decorated._is_patched_logger = True  # noqa: SLF001
+
+    setattr(container, method_name, decorated)
+
+    return
+
+
+@contextmanager
+def patch_method_logger(  # noqa: ANN201
+    *args: Callable, **kwargs: Any
+):
+    """Context manager to log calls to a method or function using log_method_call decorator.
+
+    This is useful to log 3rd party library methods without modifying their source code.
+    """
+    try:
+        for target in args:
+            _patch_method_logger(target, **kwargs)
+        yield
+    finally:
+        for target in args:
+            container, method_name = _locate_function(target)
+            current = getattr(container, method_name)
+            if getattr(current, "_is_patched_logger", False):
+                setattr(container, method_name, target)
+
+
 def get_logger(name: str) -> TestLogger:
     """Return a logger customized for our tests.
 

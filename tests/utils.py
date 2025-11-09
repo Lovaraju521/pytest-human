@@ -4,13 +4,14 @@ from pathlib import Path
 from _pytest.pytester import RunResult
 from playwright.sync_api import Locator, Page
 
+from pytest_human.log import log_method_call
 
+
+@log_method_call()
 def find_test_log_location(result: RunResult) -> Path:
     """Find the test log location from the pytest output."""
     for line in result.outlines:
-        matches = re.match(
-            r"Test (?P<test_name>.*) HTML log at (?P<log_path>file://.+)", line
-        )
+        matches = re.match(r"Test (?P<test_name>.*) HTML log at (?P<log_path>file://.+)", line)
 
         if matches is None:
             continue
@@ -22,6 +23,7 @@ def find_test_log_location(result: RunResult) -> Path:
     raise ValueError("Could not find test log location in pytest output.")
 
 
+@log_method_call()
 def open_span(page: Page | Locator, span_text: str | re.Pattern) -> Locator:
     nested_span = page.locator('tr[id^="header"]').filter(has_text=span_text)
 

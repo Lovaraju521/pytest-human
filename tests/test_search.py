@@ -1,12 +1,38 @@
 import re
+from collections.abc import Iterator
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Locator, LocatorAssertionsImpl, Page, expect
 
+from pytest_human.log import patch_method_logger
 from tests import utils
 
 
+@pytest.fixture(autouse=True)
+def log_3rdparty_methods() -> Iterator[None]:
+    """
+    Setup logging for 3rd party methods used in tests.
+
+    Will only work in this test if using --runpytest subprocess, because of a conflict
+    with the sub-pytest html logging.
+    """
+    with patch_method_logger(
+        Page.goto,
+        pytest.Pytester.runpytest,
+        pytest.Pytester.makepyfile,
+        Page.locator,
+        Locator.fill,
+        Locator.press,
+        LocatorAssertionsImpl.to_have_text,
+        LocatorAssertionsImpl.to_be_focused,
+        LocatorAssertionsImpl.to_have_class,
+    ):
+        yield
+
+
 def test_search_simple_keyboard(pytester: pytest.Pytester, page: Page) -> None:
+    """Test searching for text using the keyboard shortcut to focus the search box."""
+
     pytester.makepyfile("""
         def test_example(human):
             human.info("funkadelic.")
@@ -30,6 +56,8 @@ def test_search_simple_keyboard(pytester: pytest.Pytester, page: Page) -> None:
 
 
 def test_search_simple(pytester: pytest.Pytester, page: Page) -> None:
+    """Test searching for text."""
+
     pytester.makepyfile("""
         def test_example(human):
             human.info("searching for this quintessential text")
@@ -53,10 +81,9 @@ def test_search_simple(pytester: pytest.Pytester, page: Page) -> None:
     expect(active_match).to_have_text("quintessential")
 
 
-def test_search_multiple_results_keyboard(
-    pytester: pytest.Pytester, page: Page
-) -> None:
-    """Test navigating forward and backward through multiple search results."""
+def test_search_multiple_results_keyboard(pytester: pytest.Pytester, page: Page) -> None:
+    """Test navigating forward and backward through multiple search results with keyboard."""
+
     pytester.makepyfile("""
         def test_example(human):
             human.info("first test occurrence")
@@ -96,6 +123,7 @@ def test_search_multiple_results_keyboard(
 
 def test_search_multiple_results(pytester: pytest.Pytester, page: Page) -> None:
     """Test navigating forward and backward through multiple search results."""
+
     pytester.makepyfile("""
         def test_example(human):
             human.info("first test occurrence")
@@ -138,7 +166,8 @@ def test_search_multiple_results(pytester: pytest.Pytester, page: Page) -> None:
 
 
 def test_search_wrap_around(pytester: pytest.Pytester, page: Page) -> None:
-    """Test navigating forward and backward through multiple search results."""
+    """Test wrap around while navigating forward and backward through multiple search results."""
+
     pytester.makepyfile("""
         def test_example(human):
             human.info("first test occurrence")
@@ -178,7 +207,8 @@ def test_search_wrap_around(pytester: pytest.Pytester, page: Page) -> None:
 
 
 def test_search_within_spans_expands(pytester: pytest.Pytester, page: Page) -> None:
-    """Test searching for text that may be split across span elements."""
+    """Test searching for text with hidden spans expands the spans to show results."""
+
     pytester.makepyfile("""
         def test_example(human):
             with human.span_info("Styled Text Span"):

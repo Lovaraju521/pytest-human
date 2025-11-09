@@ -180,8 +180,10 @@ class _SpanEndFilter(logging.Filter):
 
 def _get_class_name(func: Callable) -> str:
     """Get a class name from a method or function."""
-    if hasattr(func, "__self__"):
-        return func.__self__.__class__.__name__
+    if self_attr := getattr(func, "__self__", None):
+        if inspect.ismodule(self_attr):
+            return self_attr.__name__
+        return self_attr.__class__.__name__
 
     func_components = func.__qualname__.split(".")
 
@@ -319,7 +321,7 @@ def _get_public_methods(container: Any) -> list[Callable]:
     for name, member in inspect.getmembers(container):
         if name.startswith("_"):
             continue
-        if inspect.isfunction(member) or inspect.ismethod(member):
+        if inspect.isroutine(member):
             methods.append(member)
     return methods
 

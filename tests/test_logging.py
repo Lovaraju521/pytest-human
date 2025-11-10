@@ -270,15 +270,15 @@ def test_logging_log_fixtures_teardown(pytester: pytest.Pytester, page: Page) ->
     ).to_have_count(1)
 
 
-def test_logging_log_method_call(pytester: pytest.Pytester, page: Page) -> None:
+def test_logging_log_call(pytester: pytest.Pytester, page: Page) -> None:
     pytester.makepyfile("""
-        from pytest_human.log import log_method_call
+        from pytest_human.log import log_call
 
-        @log_method_call()
+        @log_call()
         def a(x):
             return b(x+1)
 
-        @log_method_call()
+        @log_call()
         def b(x):
             return x + 1
 
@@ -297,18 +297,21 @@ def test_logging_log_method_call(pytester: pytest.Pytester, page: Page) -> None:
     expect(a_call.locator("td.msg-cell").last).to_contain_text("a(x=1) -> 3")
 
 
-def test_logging_patch_method_logger(pytester: pytest.Pytester, page: Page) -> None:
+def test_logging_log_calls(pytester: pytest.Pytester, page: Page) -> None:
     pytester.makepyfile("""
-        from pytest_human.log import patch_method_logger
+        from pytest_human.log import log_calls
         import os
+        import base64
 
         def test_example(human):
             a = [1, 2, 3]
             os.path.join("path", "one")
 
-            with patch_method_logger(os.path.join):
+            with log_calls(os.path.join, base64.b64encode):
                 os.path.join("path", "two")
+                base64.b64encode(b"three")
 
+            base64.b64encode(b"three")
             os.path.join("path", "three")
     """)
 
@@ -322,18 +325,23 @@ def test_logging_patch_method_logger(pytester: pytest.Pytester, page: Page) -> N
         re.compile(r"posixpath.join\(.*-> 'path/two'")
     )
 
+    base_call = utils.open_span(page, "base64.b64encode(")
+    expect(base_call.locator("td.msg-cell").last).to_contain_text(
+        re.compile(r"base64.b64encode\(.*-> b'dGhyZWU='")
+    )
 
-def test_logging_patch_all_public_methods_module(pytester: pytest.Pytester, page: Page) -> None:
+
+def test_logging_log_public_api_module(pytester: pytest.Pytester, page: Page) -> None:
     """
     Adds logging to all public methods in a module
     """
     pytester.makepyfile("""
-        from pytest_human.log import patch_all_public_methods
+        from pytest_human.log import log_public_api
         import math
 
         def test_example(human):
             math.sqrt(9)
-            with patch_all_public_methods(math):
+            with log_public_api(math):
                 math.sqrt(16)
                 math.factorial(5)
             math.factorial(4)
@@ -352,12 +360,12 @@ def test_logging_patch_all_public_methods_module(pytester: pytest.Pytester, page
     expect(factorial_call.locator("td.msg-cell").last).to_contain_text("math.factorial(x=5) -> 120")
 
 
-def test_logging_patch_all_public_methods_class(pytester: pytest.Pytester, page: Page) -> None:
+def test_logging_log_public_api_class(pytester: pytest.Pytester, page: Page) -> None:
     """
     Adds logging to all public methods in a class
     """
     pytester.makepyfile("""
-        from pytest_human.log import patch_all_public_methods
+        from pytest_human.log import log_public_api
 
         class TestClass:
             def fobulator(self, x):
@@ -369,7 +377,7 @@ def test_logging_patch_all_public_methods_class(pytester: pytest.Pytester, page:
         def test_example(human):
             x = TestClass()
             x.fobulator(3)
-            with patch_all_public_methods(TestClass):
+            with log_public_api(TestClass):
                 x.fobulator(4)
                 x.sandwich(5)
             x.sandwich(6)

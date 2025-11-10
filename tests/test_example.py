@@ -2,7 +2,7 @@ import inspect
 import logging
 import time
 
-from pytest_human.log import get_logger, log_method_call
+from pytest_human.log import get_logger, log_call
 
 
 def test_example(human):
@@ -73,14 +73,14 @@ def test_spans(human):
     human.info("Operation completed")
 
 
-@log_method_call()
+@log_call()
 def save_login(login):
     log = get_logger(__name__)
     log.info("a log inside save_login")
     return update_db(login)
 
 
-@log_method_call(log_level=logging.TRACE)
+@log_call(log_level=logging.TRACE)
 def update_db(login):
     log = get_logger(__name__)
     delay_time = 2

@@ -217,7 +217,7 @@ def _format_call_string(
     return f"{class_name}.{func_name}({param_str})"
 
 
-def log_method_call(
+def log_call(
     *, log_level: int = logging.INFO, suppress_return: bool = False, suppress_params: bool = False
 ) -> Callable[[Callable], Callable]:
     """Decorate log method calls with parameters and return values.
@@ -296,7 +296,7 @@ def _locate_function(func: Callable) -> tuple[Any, str]:
 
 
 def _patch_method_logger(target: Callable, **kwargs: Any) -> None:
-    """Patch a method or function to log its calls using log_method_call decorator.
+    """Patch a method or function to log its calls using log_call decorator.
 
     This is useful to log 3rd party library methods without modifying their source code.
     """
@@ -306,8 +306,7 @@ def _patch_method_logger(target: Callable, **kwargs: Any) -> None:
 
     container, method_name = _locate_function(target)
 
-    # 3. Apply decorator and patch
-    decorated = log_method_call(**kwargs)(target)
+    decorated = log_call(**kwargs)(target)
     decorated._is_patched_logger = True  # noqa: SLF001
 
     setattr(container, method_name, decorated)
@@ -327,12 +326,13 @@ def _get_public_methods(container: Any) -> list[Callable]:
 
 
 @contextmanager
-def patch_method_logger(  # noqa: ANN201
+def log_calls(  # noqa: ANN201
     *args: Callable, **kwargs: Any
 ):
-    """Context manager to log calls to a method or function using log_method_call decorator.
+    """Context manager to log calls to a method or function using log_call decorator.
 
-    This is useful to log 3rd party library methods without modifying their source code.
+    This is useful to log 3rd party library methods without modifying their source code
+    and adding a decorator.
     """
     try:
         for target in args:
@@ -347,17 +347,18 @@ def patch_method_logger(  # noqa: ANN201
 
 
 @contextmanager
-def patch_all_public_methods(  # noqa: ANN201
+def log_public_api(  # noqa: ANN201
     *args: Any, **kwargs: Any
 ):
     """Context manager to log calls to all public methods of a class or module.
 
-    This is useful to log 3rd party library methods without modifying their source code.
+    This is useful to log 3rd party library methods without modifying their source code
+    and adding a decorator.
     """
     methods = []
     for container in args:
         methods.extend(_get_public_methods(container))
-    with patch_method_logger(*methods, **kwargs):
+    with log_calls(*methods, **kwargs):
         yield
 
 

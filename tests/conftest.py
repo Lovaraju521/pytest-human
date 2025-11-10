@@ -3,7 +3,7 @@ from collections.abc import Iterator
 import pytest
 from playwright.sync_api import Locator, LocatorAssertionsImpl, Page
 
-from pytest_human.log import patch_all_public_methods, patch_method_logger
+from pytest_human.log import log_calls, log_public_api
 
 pytest_plugins = "pytester"
 
@@ -17,10 +17,10 @@ def log_3rdparty_methods() -> Iterator[None]:
     with the sub-pytest html logging.
     """
     with (
-        patch_method_logger(
+        log_calls(
             pytest.Pytester.runpytest,
             pytest.Pytester.makepyfile,
         ),
-        patch_all_public_methods(Page, Locator, LocatorAssertionsImpl),
+        log_public_api(Page, Locator, LocatorAssertionsImpl),
     ):
         yield

@@ -297,6 +297,74 @@ def test_logging_log_call(pytester: pytest.Pytester, page: Page) -> None:
     expect(a_call.locator("td.msg-cell").last).to_contain_text("a(x=1) -> 3")
 
 
+def test_logging_log_call_suppress_return(pytester: pytest.Pytester, page: Page) -> None:
+    pytester.makepyfile("""
+        from pytest_human.log import log_call
+
+        @log_call(suppress_return=True)
+        def a(x):
+            return x+1
+
+        def test_example(human):
+            a(1)
+    """)
+
+    result = pytester.runpytest("--enable-html-log", "--log-level=debug")
+    html_path = utils.find_test_log_location(result)
+    assert result.ret == 0
+
+    page.goto(html_path.as_uri())
+    a_call = utils.open_span(page, "a(x=1)")
+    expect(a_call.locator("td.msg-cell").last).to_contain_text("a(x=1) -> <suppressed>")
+
+
+def test_logging_log_call_suppress_params(pytester: pytest.Pytester, page: Page) -> None:
+    pytester.makepyfile("""
+        from pytest_human.log import log_call
+
+        @log_call(suppress_params=True)
+        def a(x, y):
+            return x+1
+
+        def test_example(human):
+            a(1, y=2)
+    """)
+
+    result = pytester.runpytest("--enable-html-log", "--log-level=debug")
+    html_path = utils.find_test_log_location(result)
+    assert result.ret == 0
+
+    page.goto(html_path.as_uri())
+    a_call = utils.open_span(page, "a()")
+    expect(a_call.locator("td.msg-cell").last).to_contain_text("a() -> 2")
+
+
+def test_logging_log_call_log_level(pytester: pytest.Pytester, page: Page) -> None:
+    pytester.makepyfile("""
+        from pytest_human.log import log_call
+        import logging
+
+        @log_call(log_level=logging.TRACE)
+        def a(x, y):
+            return x+1
+
+        def test_example(human):
+            a(1, y=2)
+    """)
+
+    result = pytester.runpytest("--enable-html-log", "--log-level=trace")
+    html_path = utils.find_test_log_location(result)
+    assert result.ret == 0
+
+    page.goto(html_path.as_uri())
+
+    log_lines = page.locator("tr.log-level-trace").filter(visible=True)
+    expect(log_lines).to_have_count(1)
+    log_lines = log_lines.first
+    expect(log_lines.locator("td.level-cell")).to_have_text("TRACE")
+    expect(log_lines.locator("td.msg-cell")).to_contain_text("a(x=1, y=2)")
+
+
 def test_logging_log_calls(pytester: pytest.Pytester, page: Page) -> None:
     pytester.makepyfile("""
         from pytest_human.log import log_calls

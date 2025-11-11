@@ -1,5 +1,3 @@
-import re
-
 import pytest
 from _pytest.config import ExitCode
 from playwright.sync_api import Page, expect

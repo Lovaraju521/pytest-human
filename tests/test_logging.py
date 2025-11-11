@@ -240,6 +240,40 @@ def test_logging_log_fixtures_setup(pytester: pytest.Pytester, page: Page) -> No
     )
 
 
+def test_logging_log_fixtures_setup_async(pytester: pytest.Pytester, page: Page) -> None:
+    pytester.makepyfile("""
+        import pytest
+
+        @pytest.fixture
+        async def foobulator():
+            return 3
+
+        @pytest.fixture
+        async def sandwich(foobulator):
+            return foobulator + 2
+
+        @pytest.mark.asyncio
+        async def test_example(sandwich):
+            assert True
+    """)
+
+    result = pytester.runpytest_subprocess("--enable-html-log", "--log-level=debug")
+    html_path = utils.find_test_log_location(result)
+    assert result.ret == 0
+
+    page.goto(html_path.as_uri())
+    test_setup = utils.open_span(page, "Test setup")
+    sandwich_setup = utils.open_span(test_setup, "setup fixture sandwich(foobulator=")
+    expect(sandwich_setup.locator("td.msg-cell").last).to_contain_text(
+        "setup fixture sandwich() -> "
+    )
+
+    foobulator_setup = utils.open_span(test_setup, "setup fixture foobulator()")
+    expect(foobulator_setup.locator("td.msg-cell").last).to_contain_text(
+        "setup fixture foobulator() -> "
+    )
+
+
 def test_logging_log_fixtures_teardown(pytester: pytest.Pytester, page: Page) -> None:
     pytester.makepyfile("""
         import pytest
@@ -257,6 +291,37 @@ def test_logging_log_fixtures_teardown(pytester: pytest.Pytester, page: Page) ->
     """)
 
     result = pytester.runpytest("--enable-html-log", "--log-level=debug")
+    html_path = utils.find_test_log_location(result)
+    assert result.ret == 0
+
+    page.goto(html_path.as_uri())
+    test_teardown = utils.open_span(page, "Test teardown")
+    expect(
+        test_teardown.locator("td.msg-cell").filter(has_text="Tore down fixture sandwich()")
+    ).to_have_count(1)
+    expect(
+        test_teardown.locator("td.msg-cell").filter(has_text="Tore down fixture foobulator()")
+    ).to_have_count(1)
+
+
+def test_logging_log_fixtures_teardown_async(pytester: pytest.Pytester, page: Page) -> None:
+    pytester.makepyfile("""
+        import pytest
+
+        @pytest.fixture
+        async def foobulator():
+            return 3
+
+        @pytest.fixture()
+        async def sandwich(foobulator):
+            return foobulator + 2
+
+        @pytest.mark.asyncio
+        def test_example(sandwich):
+            assert True
+    """)
+
+    result = pytester.runpytest_subprocess("--enable-html-log", "--log-level=debug")
     html_path = utils.find_test_log_location(result)
     assert result.ret == 0
 
@@ -295,6 +360,32 @@ def test_logging_log_call(pytester: pytest.Pytester, page: Page) -> None:
     b_call = utils.open_span(a_call, "b(x=2)")
     expect(b_call.locator("td.msg-cell").last).to_contain_text("b(x=2) -> 3")
     expect(a_call.locator("td.msg-cell").last).to_contain_text("a(x=1) -> 3")
+
+
+def test_logging_log_call_async(pytester: pytest.Pytester, page: Page) -> None:
+    pytester.makepyfile("""
+        from pytest_human.log import log_call
+        import pytest
+
+        @log_call()
+        async def a(x):
+            return x + 1
+
+        @pytest.mark.asyncio
+        async def test_example(human):
+            await a(1)
+    """)
+
+    result = pytester.runpytest_subprocess(
+        "--enable-html-log",
+        "--log-level=debug",
+    )
+    html_path = utils.find_test_log_location(result)
+    assert result.ret == 0
+
+    page.goto(html_path.as_uri())
+    a_call = utils.open_span(page, "a(x=1)")
+    expect(a_call.locator("td.msg-cell").last).to_contain_text("a(x=1) -> 2")
 
 
 def test_logging_log_call_suppress_return(pytester: pytest.Pytester, page: Page) -> None:

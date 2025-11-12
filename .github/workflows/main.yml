@@ -25,7 +25,13 @@ jobs:
         run: pip install tox
 
       - name: Test
-        run: tox -e py -- --tracing=on --screenshot=on --video=retain-on-failure --output ${{ github.workspace }}/playwright-output
+        run: |
+          tox -e py -- --tracing=retain-on-failure --screenshot=on \
+           --video=retain-on-failure \
+           --output ${{ github.workspace }}/playwright-output \
+           --enable-html-log \
+           --html-output-dir ${{ github.workspace }}/human-output \
+           --log-level DEBUG
 
       - name: Upload Playwright Output
         if: always()
@@ -34,3 +40,11 @@ jobs:
           name: playwright-output-${{ matrix.python-version }}
           path: ${{ github.workspace }}/playwright-output/
           retention-days: 5
+
+      - name: Upload Human Report Output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: human-output-${{ matrix.python-version }}
+          path: ${{ github.workspace }}/human-output/
+          retention-days: 5 

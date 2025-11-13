@@ -9,7 +9,7 @@ import warnings
 from collections.abc import Iterator
 from contextlib import suppress
 from pathlib import Path
-from typing import Optional
+from typing import Optional, cast
 
 import pytest
 from _pytest.nodes import Node
@@ -18,6 +18,7 @@ from rich.pretty import pretty_repr
 from pytest_human._flags import is_output_to_test_tmp
 from pytest_human.exceptions import HumanLogLevelWarning
 from pytest_human.html_report import HtmlFileHandler
+from pytest_human.human import Human
 from pytest_human.log import TestLogger, _SpanEndFilter, get_logger
 
 
@@ -27,6 +28,7 @@ class HtmlLogPlugin:
     HTML_LOG_PLUGIN_NAME = "html-log-plugin"
     log_path_key = pytest.StashKey[Path]()
     html_log_handler_key = pytest.StashKey[HtmlFileHandler]()
+    human_logger_key = pytest.StashKey[Human]()
 
     def __init__(self) -> None:
         self.test_tmp_path = None
@@ -227,6 +229,12 @@ class HtmlLogPlugin:
                 )
 
     @pytest.fixture(autouse=True)
+    def _extract_human_object(self, request: pytest.FixtureRequest, human: Human) -> None:
+        """Fixture to extract and stash the human object for the test."""
+        item = request.node
+        item.stash[self.human_logger_key] = human
+
+    @pytest.fixture(autouse=True)
     def _relocate_test_log(self, request: pytest.FixtureRequest, tmp_path: Path) -> None:
         """Fixture to relocate the test log file to the test temporary directory if needed."""
         item = request.node
@@ -305,3 +313,42 @@ class HtmlLogPlugin:
         """Log successful assertions to the test log."""
         logger = self._get_test_logger(item)
         logger.debug(f"assert {orig}", highlight=True)
+
+    @pytest.hookimpl(hookwrapper=True)
+    def pytest_runtest_makereport(self, item: pytest.Item, call: pytest.CallInfo) -> Iterator[None]:
+        """Hook to create the test report.
+
+        We use it to attach the `item` to the `report` object.
+        """  # noqa: D401
+        outcome = yield
+        report = outcome.get_result()
+
+        report.item = item
+
+    def _log_artifacts(self, human: Human) -> None:
+        for attachment in human.artifacts.logs():
+            with human.log.span.info(attachment.file_name):
+                if attachment.description:
+                    human.log.info(attachment.description)
+                content = cast(str, attachment.content)
+                human.log.info(content, highlight=True)
+
+    def pytest_runtest_logreport(self, report: pytest.TestReport) -> None:
+        """Log test report information to the HTML log."""
+        if report.when != "teardown":
+            return
+
+        logger = get_logger(report.nodeid)
+        human: Human = report.item.stash.get(self.human_logger_key, None)
+
+        with logger.span.info("Test artifacts"):
+            for section_name, content in report.sections:
+                if section_name.startswith("Captured log"):
+                    # no need to write the logs again
+                    continue
+
+                with logger.span.info(f"{section_name}"):
+                    logger.info(f"{content}", highlight=True)
+
+            if human:
+                self._log_artifacts(human)

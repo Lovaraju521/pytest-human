@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 
 from _pytest.pytester import RunResult
-from playwright.sync_api import Locator, Page
+from playwright.sync_api import Locator, Page, expect
 
 from pytest_human.log import traced
 
@@ -33,3 +33,11 @@ def open_span(page: Page | Locator, span_text: str | re.Pattern) -> Locator:
 
     inner_log_block = nested_span.locator("xpath=following-sibling::tr[1]")
     return inner_log_block
+
+
+@traced()
+def assert_unopenable_span(page: Page | Locator, span_text: str | re.Pattern) -> None:
+    nested_span = page.locator('tr[id^="header"]').filter(has_text=span_text)
+
+    expand_button = nested_span.locator("td.toggle-cell").get_by_role("button")
+    expect(expand_button).to_be_hidden()

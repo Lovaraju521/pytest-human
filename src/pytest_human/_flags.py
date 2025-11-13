@@ -63,3 +63,10 @@ def register_flags(parser: pytest.Parser) -> None:
         Example levels: TRACE, DEBUG, INFO, WARNING, ERROR, CRITICAL.
         """,
     )
+
+    group.addoption(
+        "--html-quiet",
+        action="store_true",
+        default=False,
+        help="Remove console logging output from pytest-human when HTML logging is enabled.",
+    )

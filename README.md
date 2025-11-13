@@ -12,6 +12,16 @@ Unlike other pytest HTML report plugins, **pytest-human** creates a separate HTM
 
 ![Screenshot](assets/test_example.png)
 
+## Features
+* Beautiful test logs
+* Collapsible spans
+* Syntax highlighting
+* Automatic fixture logging
+* Automatic method call logging
+* Third-party method tracing
+* Colored log levels
+* Deep error highlighting
+* Regex search in collapsed spans
 
 ## Installation
 
@@ -28,17 +38,20 @@ pip install pytest-human
 1. Enable the plugin when running pytest:
 
 ```bash
-pytest --enable-html-log --log-level DEBUG
+pytest --enable-html-log --log-level DEBUG --html-output-dir output/
 ```
 
-2. Use the `human` fixture in your tests:
+Setting the log level is important as the pytest default is high (`WARNING`).
+
+2. Use the `human` objects in your tests:
 
 ```python
 from pytest_human.log import log_call
 
 @log_call()
 def insert_db(data):
-    logging.info("executing query")
+    query = "INSERT INTO flowers (petals) VALUES ('{{1,2,3,4,5}}');"
+    logging.info(f"executing {query=}")
     return len(data)
 
 def test_example(human):
@@ -57,17 +70,18 @@ def test_example(human):
     assert result == 15
 ```
 
-3. Find your HTML logs:
+3. Open the HTML test report
 
-At the start and end of individual tests you will see a similar line:
+At the end of individual tests you will see a similar line:
 
 ```console
-Test test_single_stage_ui HTML log at file:///tmp/pytest-of-john.doe/pytest-2/session_logs/test_frobulator.html
+🌎 Test test_single_stage_ui HTML log at file:///tmp/pytest-of-john.doe/pytest-2/session_logs/test_frobulator.html
 ```
 
-You can control/command-click the path to open the file, or find it in the filesystem.
+You can <kbd>Ctrl</kbd>/<kbd>⌘</kbd>-click the link in most terminals to open the file.
 
-By the default the logs can be found in the session temp directory under the `session_logs` directory.
+4. Debug!
+  ![Screenshot](assets/test_example.png) 
 
 
 ## Command Line Options
@@ -86,15 +100,14 @@ pytest --enable-html-log
 Control where HTML logs are saved:
 
 ```bash
-# Save in session directory (default) with test name
-pytest --enable-html-log --html-log-dir session
+# Save all test logs in a custom directory specified by the user.
+pytest --html-output-dir /path/to/logs
+
+# By default logs are saved in session temp directory with test name
+pytest --enable-html-log 
 
 # Save in individual test temporary directories as test.log
-pytest --enable-html-log --html-log-dir test
-
-# Save all test logs in a custom directory specified by the user.
-# The directory should exist.
-pytest --enable-html-log --html-log-dir custom --html-custom-dir /path/to/logs
+pytest --enable-html-log --html-use-test-tmp
 ```
 
 ### Log Level
@@ -112,7 +125,7 @@ pytest --enable-html-log --html-log-level INFO
 
 ```
 
-Setting the log level is critical, especially in the root log level as a lot of human's basic features are only avilable in `INFO`/`DEBUG` levels.
+Setting the log level is critical, especially in the root log level as a lot of human's basic features are only available in `INFO`/`DEBUG` levels.
 Setting the root log level is taken care of by pytest `--log-level` settings.
 
 Available log levels: `TRACE`, `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`
@@ -121,11 +134,12 @@ Available log levels: `TRACE`, `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`
 
 ### Fixtures
 
-Two fixtures are available (they're aliases):
 - `human` - Supplies a logger to the test, all log sources are displayed using the test name. For helpers/fixtures prefer using `get_logger` instead
 - `test_log` - Alternative synonym for `human` fixture
-
+- `human_test_log_path` - Path of the html log file for the current test
 ### Logging Methods
+
+![Screenshot](assets/test_logging_methods.png)
 
 ```python
 def test_logging_methods(human):
@@ -149,13 +163,17 @@ def test_logging_methods(human):
 
 ### Collapsible Spans
 
-Create nested, collapsible sections in your HTML logs:
+![Screenshot](assets/test_spans.png)
+
+
+Create nested, collapsible sections in your HTML logs.
+
+This allows partitioning the log into sections and diving only into the parts of the logs that are relevant to your debug session.
 
 ```python
 def test_spans(human):
     human.info("Starting complex operation")
     
-    # Top-level span
     with human.span_info("Phase 1: Initialization"):
         human.debug("Initializing resources...")
         
@@ -213,10 +231,37 @@ By adding the `@log_call` decorator, the method will be
 automatically logged when called and finished executing. The call
 will be placed in a nested span, which will also include all further logging inside the function scope.
 
+`@log_call` supports the following parameters:
+* `suppress_return` - do not log the return value, useful when it is overly long
+* `suppress_params` - do not log the method parameters, useful when they are overly long
+* `log_level` - set a log level for the method trace
+
+## Third-party method tracing
+
+The `@log_call` decorator is very useful for debugging but it is unfortunately restricted to code you own.
+
+In order to log third-party methods, you can use the `log_calls` and `log_public_api` methods, which monkey patch third party code with human tracing.
+
+`log_calls` adds logging to a list of functions, while `log_public_api` adds logging to all public methods of modules/classes.
+
+```python
+@pytest.fixture(autouse=True)
+def log_3rdparty_methods():
+    with (
+        log_calls(
+            pytest.Pytester.runpytest,
+            pytest.Pytester.makepyfile,
+        ),
+        log_calls(Page.screenshot, suppress_return=True),
+        # this skips Page.screenshot as it is already defined above
+        log_public_api(Page, Locator, LocatorAssertionsImpl),
+    ):
+        yield
+```
 
 ## TRACE Logging
 
-pytest-human adds a custom `TRACE` log level below `DEBUG` for ultra-detailed logging:
+pytest-human adds a custom `TRACE` log level below `DEBUG` for more verbose logging:
 
 ```python
 def test_trace_logging(human):
@@ -228,30 +273,6 @@ Run with trace level:
 ```bash
 pytest --enable-html-log --log-level trace
 ```
-
-
-## HTML Report Features
-
-The generated HTML reports include:
-
-- **Header Section**:
-  - Test name and description (from docstring)
-  - Timestamp
-  - Searchable log viewer
-
-- **Log Table**:
-  - Timestamp for each log entry
-  - Log level with color coding
-  - Source (logger name)
-  - Message with syntax highlighting
-  - Collapsible nested spans
-
-- **Interactive Features**:
-  - Click to expand/collapse spans
-  - Color-coded severity levels
-  - Automatic indentation for nested content
-  - Duration tracking for spans
-
 
 ## Configuration
 
@@ -273,7 +294,7 @@ def test_standard_logging(human):
 
 ### Programmatic Access
 
-Get the test logger programmatically:
+Get the test logger programmatically, useful for fixtures or inside functions:
 
 ```python
 from pytest_human.log import get_logger
@@ -297,6 +318,12 @@ pytest
 
 # Run with coverage
 pytest --cov=pytest_human
+```
+
+Alternatively use tox
+
+```bash
+tox
 ```
 
 ### Building Documentation

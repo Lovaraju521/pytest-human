@@ -5,20 +5,26 @@ import time
 from pytest_human.log import get_logger, log_call
 
 
+@log_call()
+def insert_db(data):
+    query = "INSERT INTO flowers (petals) VALUES ('{{1,2,3,4,5}}');"
+    logging.info(f"executing {query=}")
+    return len(data)
+
+
 def test_example(human):
     """This test demonstrates pytest-human logging."""
-    human.info("Starting test execution")
+    human.info("Established test agent connection")
 
-    with human.span_info("Processing data"):
-        human.debug("Loading data...")
+    with human.span_info("Generating sample data"):
         data = [1, 2, 3, 4, 5]
-        human.info(f"Loaded {len(data)} items", highlight=True)
+        human.info(f"Loaded sample data {data=} {len(data)=}", highlight=True)
+        insert_db(data)
 
-        with human.span_debug("Calculating sum"):
+        with human.span_debug("Validating sample"):
             result = sum(data)
-            human.debug(f"Sum result: {result}")
+            human.debug(f"Sum {result=}", highlight=True)
 
-    human.info("Test completed successfully")
     assert result == 15
 
 

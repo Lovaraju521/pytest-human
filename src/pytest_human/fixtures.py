@@ -2,6 +2,7 @@
 
 import pytest
 
+from pytest_human.human import Human
 from pytest_human.log import TestLogger, get_logger
 
 
@@ -11,12 +12,15 @@ def _get_test_log(request: pytest.FixtureRequest) -> TestLogger:
 
 
 @pytest.fixture
-def human(request: pytest.FixtureRequest) -> TestLogger:
+def human(request: pytest.FixtureRequest) -> Human:
     """Provide a human logger to the test."""
-    return _get_test_log(request)
+    return Human(request.node)
 
 
 @pytest.fixture
 def test_log(request: pytest.FixtureRequest) -> TestLogger:
-    """An alias to the human fixture."""
+    """Provides a test logger.
+
+    This is equivalent to human.log or get_logger(request.node.name).
+    """
     return _get_test_log(request)

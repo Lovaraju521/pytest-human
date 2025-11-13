@@ -7,7 +7,7 @@ from tests import utils
 def test_header_title(pytester: pytest.Pytester, page: Page) -> None:
     pytester.makepyfile("""
         def test_title(human):
-            human.warning("This is an INFO log message.")
+            human.log.warning("This is an INFO log message.")
     """)
 
     result = pytester.runpytest_subprocess("--enable-html-log")
@@ -26,7 +26,7 @@ def test_header_description(pytester: pytest.Pytester, page: Page) -> None:
         def test_description(human):
             '''This is a test with a funky description.'''
 
-            human.warning("This is an INFO log message.")
+            human.log.warning("This is an INFO log message.")
     """)
 
     result = pytester.runpytest_subprocess("--enable-html-log")

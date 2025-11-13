@@ -212,7 +212,7 @@ class HtmlLogPlugin:
 
         logger = get_logger(fixturedef.argname)
         call_str = self._format_fixture_call(fixturedef, request)
-        with logger.span_debug(f"setup fixture {call_str}", highlight=True):
+        with logger.span.debug(f"setup fixture {call_str}", highlight=True):
             result = yield
             try:
                 fix_result = result.get_result()
@@ -253,7 +253,7 @@ class HtmlLogPlugin:
         """Start a span covering all fixture setup for this test item."""
 
         logger = self._get_test_logger(item)
-        with logger.span_info("Test setup"):
+        with logger.span.info("Test setup"):
             yield
 
     @pytest.hookimpl(hookwrapper=True)
@@ -261,7 +261,7 @@ class HtmlLogPlugin:
         """Start a span covering all fixture cleanup (teardown) for this test item."""
 
         logger = self._get_test_logger(item)
-        with logger.span_info("Test teardown"):
+        with logger.span.info("Test teardown"):
             yield
 
     def pytest_fixture_post_finalizer(
@@ -296,7 +296,7 @@ class HtmlLogPlugin:
 
         traceback = report.longreprtext
 
-        with logger.span_error(
+        with logger.span.error(
             f"Exception: {excinfo.type.__name__} {excinfo.value}", highlight=True
         ):
             logger.error(f"traceback: {traceback}", highlight=True)

@@ -14,28 +14,28 @@ def insert_db(data):
 
 def test_example(human):
     """This test demonstrates pytest-human logging."""
-    human.info("Established test agent connection")
+    human.log.info("Established test agent connection")
 
-    with human.span_info("Generating sample data"):
+    with human.log.span.info("Generating sample data"):
         data = [1, 2, 3, 4, 5]
-        human.info(f"Loaded sample data {data=} {len(data)=}", highlight=True)
+        human.log.info(f"Loaded sample data {data=} {len(data)=}", highlight=True)
         insert_db(data)
 
-        with human.span_debug("Validating sample"):
+        with human.log.span.debug("Validating sample"):
             result = sum(data)
-            human.debug(f"Sum {result=}", highlight=True)
+            human.log.debug(f"Sum {result=}", highlight=True)
 
     assert result == 15
 
 
 def test_logging_methods(human):
     # Basic logging at different levels
-    human.trace("Trace level message")
-    human.debug("Debug level message")
-    human.info("Info level message")
-    human.warning("Warning level message")
-    human.error("Error level message")
-    human.critical("Critical level message")
+    human.log.trace("Trace level message")
+    human.log.debug("Debug level message")
+    human.log.info("Info level message")
+    human.log.warning("Warning level message")
+    human.log.error("Error level message")
+    human.log.critical("Critical level message")
 
     # Syntax highlighting for code
     code = """
@@ -45,7 +45,7 @@ def test_logging_methods(human):
         return volume > 0.5:
     """
     code = inspect.cleandoc(code)
-    human.info(code, highlight=True)
+    human.log.info(code, highlight=True)
 
 
 def load_config():
@@ -57,26 +57,26 @@ def process_data():
 
 
 def test_spans(human):
-    human.info("Starting complex operation")
+    human.log.info("Starting complex operation")
 
     # Top-level span
-    with human.span_info("Phase 1: Initialization"):
-        human.debug("Initializing resources...")
+    with human.log.span.info("Phase 1: Initialization"):
+        human.log.debug("Initializing resources...")
 
         # Nested span
-        with human.span_debug("Loading configuration"):
-            human.trace("Reading config file")
+        with human.log.span.debug("Loading configuration"):
+            human.log.trace("Reading config file")
             config = load_config()
-            human.debug(f"Config loaded: {config}")
+            human.log.debug(f"Config loaded: {config}")
 
-        human.info("Initialization complete")
+        human.log.info("Initialization complete")
 
     # Another top-level span
-    with human.span_info("Phase 2: Processing"):
-        human.debug("Processing data...")
+    with human.log.span.info("Phase 2: Processing"):
+        human.log.debug("Processing data...")
         process_data()
 
-    human.info("Operation completed")
+    human.log.info("Operation completed")
 
 
 @traced()
@@ -98,3 +98,11 @@ def update_db(login):
 def test_method_tracing(human):
     delay = save_login("hello")
     assert delay == 2
+
+
+def test_artifacts(human):
+    human.log.info("Attaching artifacts to the test report")
+
+    # Attach a log file
+    log_content = "This is a sample log file.\nLine 2 of the log.\nLine 3 of the log."
+    human.artifacts.add_log_text(log_content, "sample.log", description="Sample log file")

@@ -1,5 +1,7 @@
 """Custom logging utilities for pytest-human."""
 
+from __future__ import annotations
+
 import functools
 import inspect
 import logging
@@ -20,6 +22,89 @@ _HIGHLIGHT_EXTRA = {_SYNTAX_HIGHLIGHT_TAG: True}
 _log_local = threading.local()
 
 
+class SpanLogger:
+    """Logger interface for logging spans.
+
+    The interface is similar to a regular logger, but each method is
+    a context manager that creates a nested logging span.
+    """
+
+    def __init__(self, logger: TestLogger) -> None:
+        self._logger = logger
+
+    @contextmanager
+    def emit(
+        self,
+        log_level: int,
+        message: str,
+        highlight: bool = False,
+        extra: Optional[dict[str, Any]] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Iterator[None]:
+        """Create a nested logging span.
+
+        A span is a logging message that can be expanded/collapsed in the HTML log viewer.
+        """
+        extra = extra or {}
+        if highlight:
+            extra |= _HIGHLIGHT_EXTRA
+        try:
+            self._logger.log(
+                log_level,
+                message,
+                *args,
+                **kwargs,
+                extra=extra | {_SPAN_START_TAG: True},
+            )
+            yield
+        finally:
+            self._logger.log(log_level, "", extra={_SPAN_END_TAG: True})
+
+    def trace(self, message: str, *args: Any, **kwargs: Any) -> AbstractContextManager[None]:
+        """Create a nested TRACE logging span.
+
+        This is a logging message that can be expanded/collapsed in the HTML log viewer.
+        Using TRACE level requires enabling TRACE logging via TestLogger.setup_trace_logging()
+        """
+        return self.emit(TRACE_LEVEL_NUM, message, *args, **kwargs)
+
+    def debug(self, message: str, *args: Any, **kwargs: Any) -> AbstractContextManager[None]:
+        """Create a nested DEBUG logging span.
+
+        This is a logging message that can be expanded/collapsed in the HTML log viewer.
+        """
+        return self.emit(logging.DEBUG, message, *args, **kwargs)
+
+    def info(self, message: str, *args: Any, **kwargs: Any) -> AbstractContextManager[None]:
+        """Create a nested INFO logging span.
+
+        This is a logging message that can be expanded/collapsed in the HTML log viewer.
+        """
+        return self.emit(logging.INFO, message, *args, **kwargs)
+
+    def warning(self, message: str, *args: Any, **kwargs: Any) -> AbstractContextManager[None]:
+        """Create a nested WARNING logging span.
+
+        This is a logging message that can be expanded/collapsed in the HTML log viewer.
+        """
+        return self.emit(logging.WARNING, message, *args, **kwargs)
+
+    def error(self, message: str, *args: Any, **kwargs: Any) -> AbstractContextManager[None]:
+        """Create a nested ERROR logging span.
+
+        This is a logging message that can be expanded/collapsed in the HTML log viewer.
+        """
+        return self.emit(logging.ERROR, message, *args, **kwargs)
+
+    def critical(self, message: str, *args: Any, **kwargs: Any) -> AbstractContextManager[None]:
+        """Create a nested CRITICAL logging span.
+
+        This is a logging message that can be expanded/collapsed in the HTML log viewer.
+        """
+        return self.emit(logging.CRITICAL, message, *args, **kwargs)
+
+
 class TestLogger(logging.LoggerAdapter):
     """A logger adapter (wrapper) that adds a trace method, spans and syntax highlighting."""
 
@@ -28,6 +113,7 @@ class TestLogger(logging.LoggerAdapter):
 
     def __init__(self, logger: logging.Logger) -> None:
         super().__init__(logger, {})
+        self.span = SpanLogger(self)
 
     def _log_with_highlight(
         self,
@@ -84,80 +170,6 @@ class TestLogger(logging.LoggerAdapter):
     def critical(self, message: str, *args: Any, highlight: bool = False, **kwargs: Any) -> None:
         """Log a CRITICAL message."""
         self._log_with_highlight(logging.CRITICAL, message, args, highlight, **kwargs)
-
-    @contextmanager
-    def span(
-        self,
-        log_level: int,
-        message: str,
-        highlight: bool = False,
-        extra: Optional[dict[str, Any]] = None,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Iterator[None]:
-        """Create a nested logging span.
-
-        A span is a logging message that can be expanded/collapsed in the HTML log viewer.
-        """
-        extra = extra or {}
-        if highlight:
-            extra |= _HIGHLIGHT_EXTRA
-        try:
-            self.log(
-                log_level,
-                message,
-                *args,
-                **kwargs,
-                extra=extra | {_SPAN_START_TAG: True},
-            )
-            yield
-        finally:
-            self.log(log_level, "", extra={_SPAN_END_TAG: True})
-
-    def span_trace(self, message: str, *args: Any, **kwargs: Any) -> AbstractContextManager[None]:
-        """Create a nested TRACE logging span.
-
-        This is a logging message that can be expanded/collapsed in the HTML log viewer.
-        Using TRACE level requires enabling TRACE logging via TestLogger.setup_trace_logging()
-        """
-        return self.span(TRACE_LEVEL_NUM, message, *args, **kwargs)
-
-    def span_debug(self, message: str, *args: Any, **kwargs: Any) -> AbstractContextManager[None]:
-        """Create a nested DEBUG logging span.
-
-        This is a logging message that can be expanded/collapsed in the HTML log viewer.
-        """
-        return self.span(logging.DEBUG, message, *args, **kwargs)
-
-    def span_info(self, message: str, *args: Any, **kwargs: Any) -> AbstractContextManager[None]:
-        """Create a nested INFO logging span.
-
-        This is a logging message that can be expanded/collapsed in the HTML log viewer.
-        """
-        return self.span(logging.INFO, message, *args, **kwargs)
-
-    def span_warning(self, message: str, *args: Any, **kwargs: Any) -> AbstractContextManager[None]:
-        """Create a nested WARNING logging span.
-
-        This is a logging message that can be expanded/collapsed in the HTML log viewer.
-        """
-        return self.span(logging.WARNING, message, *args, **kwargs)
-
-    def span_error(self, message: str, *args: Any, **kwargs: Any) -> AbstractContextManager[None]:
-        """Create a nested ERROR logging span.
-
-        This is a logging message that can be expanded/collapsed in the HTML log viewer.
-        """
-        return self.span(logging.ERROR, message, *args, **kwargs)
-
-    def span_critical(
-        self, message: str, *args: Any, **kwargs: Any
-    ) -> AbstractContextManager[None]:
-        """Create a nested CRITICAL logging span.
-
-        This is a logging message that can be expanded/collapsed in the HTML log viewer.
-        """
-        return self.span(logging.CRITICAL, message, *args, **kwargs)
 
     @classmethod
     def setup_trace_logging(cls) -> None:
@@ -275,7 +287,7 @@ def traced(
                     func_str = _format_call_string(
                         func, args, kwargs, suppress_params=suppress_params
                     )
-                    with logger.span(log_level, f"async {func_str}", highlight=True):
+                    with logger.span.emit(log_level, f"async {func_str}", highlight=True):
                         try:
                             with _out_of_trace():
                                 result = await func(*args, **kwargs)
@@ -298,7 +310,7 @@ def traced(
 
             with _in_trace():
                 func_str = _format_call_string(func, args, kwargs, suppress_params=suppress_params)
-                with logger.span(log_level, func_str, highlight=True):
+                with logger.span.emit(log_level, func_str, highlight=True):
                     try:
                         with _out_of_trace():
                             result = func(*args, **kwargs)

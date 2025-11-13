@@ -14,6 +14,7 @@ Unlike other pytest HTML report plugins, **pytest-human** creates a separate HTM
 
 ## Features
 * Beautiful test logs
+* No need to rewrite existing tests!
 * Collapsible spans
 * Syntax highlighting
 * Automatic fixture logging
@@ -56,16 +57,16 @@ pip install pytest-human
 
     def test_example(human):
         """This test demonstrates pytest-human logging."""
-        human.info("Established test agent connection")
+        human.log.info("Established test agent connection")
 
-        with human.span_info("Generating sample data"):
+        with human.log.span.info("Generating sample data"):
             data = [1, 2, 3, 4, 5]
-            human.info(f"Loaded sample data {data=} {len(data)=}", highlight=True)
+            human.log.info(f"Loaded sample data {data=} {len(data)=}", highlight=True)
             insert_db(data)
 
-            with human.span_debug("Validating sample"):
+            with human.log.span.debug("Validating sample"):
                 result = sum(data)
-                human.debug(f"Sum {result=}", highlight=True)
+                human.log.debug(f"Sum {result=}", highlight=True)
 
         assert result == 15
     ```
@@ -134,8 +135,8 @@ Available log levels: `TRACE`, `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`
 
 ### Fixtures
 
-- `human` - Supplies a logger to the test, all log sources are displayed using the test name. For helpers/fixtures prefer using `get_logger` instead
-- `test_log` - Alternative synonym for `human` fixture
+- `human` - Supplies a human object to the test. Includes a logger and attachment collector.
+- `test_log` - Supplies a logger to the test, equivalent to `human.log`. For helpers/fixtures prefer using `get_logger` instead. 
 - `human_test_log_path` - Path of the html log file for the current test
 ### Logging Methods
 
@@ -144,12 +145,12 @@ Available log levels: `TRACE`, `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`
 ```python
 def test_logging_methods(human):
     # Basic logging at different levels
-    human.trace("Trace level message")
-    human.debug("Debug level message")
-    human.info("Info level message")
-    human.warning("Warning level message")
-    human.error("Error level message")
-    human.critical("Critical level message")
+    human.log.trace("Trace level message")
+    human.log.debug("Debug level message")
+    human.log.info("Info level message")
+    human.log.warning("Warning level message")
+    human.log.error("Error level message")
+    human.log.critical("Critical level message")
     
     # Syntax highlighting for code
     code = """
@@ -158,7 +159,7 @@ def test_logging_methods(human):
     def bark(volume: float) -> bool:
         return volume > 0.5:
     """
-    human.info(code, highlight=True)
+    human.log.info(code, highlight=True)
 ```
 
 ### Collapsible Spans
@@ -172,25 +173,25 @@ This allows partitioning the log into sections and diving only into the parts of
 
 ```python
 def test_spans(human):
-    human.info("Starting complex operation")
+    human.log.info("Starting complex operation")
     
-    with human.span_info("Phase 1: Initialization"):
-        human.debug("Initializing resources...")
+    with human.log.span.info("Phase 1: Initialization"):
+        human.log.debug("Initializing resources...")
         
         # Nested span
-        with human.span_debug("Loading configuration"):
-            human.trace("Reading config file")
+        with human.log.span.debug("Loading configuration"):
+            human.log.trace("Reading config file")
             config = load_config()
-            human.debug(f"Config loaded: {config}")
+            human.log.debug(f"Config loaded: {config}")
         
-        human.info("Initialization complete")
+        human.log.info("Initialization complete")
     
     # Another top-level span
-    with human.span_info("Phase 2: Processing"):
-        human.debug("Processing data...")
+    with human.log.span.info("Phase 2: Processing"):
+        human.log.debug("Processing data...")
         process_data()
     
-    human.info("Operation completed")
+    human.log.info("Operation completed")
 ```
 
 Available span methods:
@@ -265,7 +266,7 @@ pytest-human adds a custom `TRACE` log level below `DEBUG` for more verbose logg
 
 ```python
 def test_trace_logging(human):
-    human.trace("Very detailed trace information")
+    human.log.trace("Very detailed trace information")
 ```
 
 Run with trace level:
@@ -285,16 +286,16 @@ import logging
 
 def test_standard_logging(human):
     # pytest-human logger
-    human.info("Using human fixture")
+    human.log.info("Using human fixture")
     
     # Standard Python logger - also captured in HTML
     logger = logging.getLogger(__name__)
     logger.info("Using standard logger")
 ```
 
-### Programmatic Access
+### Direct logger access
 
-Get the test logger programmatically, useful for fixtures or inside functions:
+Get the test logger programmatically, useful for fixtures or inside helper functions:
 
 ```python
 from pytest_human.log import get_logger

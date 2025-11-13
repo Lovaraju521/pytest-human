@@ -9,7 +9,7 @@ from tests import utils
 def test_logging_log_levels_trace(pytester: pytest.Pytester, page: Page) -> None:
     pytester.makepyfile("""
         def test_example(human):
-            human.trace("This is a TRACE log message.")
+            human.log.trace("This is a TRACE log message.")
     """)
 
     result = pytester.runpytest_subprocess("--enable-html-log", "--log-level=trace")
@@ -27,7 +27,7 @@ def test_logging_log_levels_trace(pytester: pytest.Pytester, page: Page) -> None
 def test_logging_log_levels_debug(pytester: pytest.Pytester, page: Page) -> None:
     pytester.makepyfile("""
         def test_example(human):
-            human.debug("This is a DEBUG log message.")
+            human.log.debug("This is a DEBUG log message.")
     """)
 
     result = pytester.runpytest_subprocess("--enable-html-log", "--log-level=debug")
@@ -45,7 +45,7 @@ def test_logging_log_levels_debug(pytester: pytest.Pytester, page: Page) -> None
 def test_logging_log_levels_info(pytester: pytest.Pytester, page: Page) -> None:
     pytester.makepyfile("""
         def test_example(human):
-            human.info("This is an INFO log message.")
+            human.log.info("This is an INFO log message.")
     """)
 
     result = pytester.runpytest_subprocess("--enable-html-log", "--log-level=info")
@@ -67,7 +67,7 @@ def test_logging_log_levels_info(pytester: pytest.Pytester, page: Page) -> None:
 def test_logging_log_levels_warning(pytester: pytest.Pytester, page: Page) -> None:
     pytester.makepyfile("""
         def test_example(human):
-            human.warning("This is a WARNING log message.")
+            human.log.warning("This is a WARNING log message.")
     """)
 
     result = pytester.runpytest_subprocess("--enable-html-log")
@@ -85,7 +85,7 @@ def test_logging_log_levels_warning(pytester: pytest.Pytester, page: Page) -> No
 def test_logging_log_levels_error(pytester: pytest.Pytester, page: Page) -> None:
     pytester.makepyfile("""
         def test_example(human):
-            human.error("This is an ERROR log message.")
+            human.log.error("This is an ERROR log message.")
     """)
 
     result = pytester.runpytest_subprocess("--enable-html-log")
@@ -103,7 +103,7 @@ def test_logging_log_levels_error(pytester: pytest.Pytester, page: Page) -> None
 def test_logging_log_levels_critical(pytester: pytest.Pytester, page: Page) -> None:
     pytester.makepyfile("""
         def test_example(human):
-            human.critical("This is a CRITICAL log message.")
+            human.log.critical("This is a CRITICAL log message.")
     """)
 
     result = pytester.runpytest_subprocess("--enable-html-log")
@@ -121,8 +121,8 @@ def test_logging_log_levels_critical(pytester: pytest.Pytester, page: Page) -> N
 def test_logging_span_simple(pytester: pytest.Pytester, page: Page) -> None:
     pytester.makepyfile("""
         def test_example(human):
-            with human.span_info("Awesome Span"):
-                human.info("This is an INFO log message inside a span.")
+            with human.log.span.info("Awesome Span"):
+                human.log.info("This is an INFO log message inside a span.")
     """)
 
     result = pytester.runpytest_subprocess("--enable-html-log", "--log-level=info")
@@ -148,9 +148,9 @@ def test_logging_span_simple(pytester: pytest.Pytester, page: Page) -> None:
 def test_logging_span_error_propagates(pytester: pytest.Pytester, page: Page) -> None:
     pytester.makepyfile("""
         def test_example(human):
-            with human.span_info("Awesome Span"):
-                with human.span_info("Nested Span"):
-                    human.error("This is an ERROR log message inside a span.")
+            with human.log.span.info("Awesome Span"):
+                with human.log.span.info("Nested Span"):
+                    human.log.error("This is an ERROR log message inside a span.")
     """)
 
     result = pytester.runpytest_subprocess("--enable-html-log", "--log-level=info")
@@ -179,9 +179,9 @@ def test_logging_span_error_propagates(pytester: pytest.Pytester, page: Page) ->
 def test_logging_span_critical_propagates(pytester: pytest.Pytester, page: Page) -> None:
     pytester.makepyfile("""
         def test_example(human):
-            with human.span_warning("Awesome Span"):
-                with human.span_critical("Nested Span"):
-                    human.error("This is an ERROR log message inside a span.")
+            with human.log.span.warning("Awesome Span"):
+                with human.log.span.critical("Nested Span"):
+                    human.log.error("This is an ERROR log message inside a span.")
     """)
 
     result = pytester.runpytest_subprocess("--enable-html-log", "--log-level=info")

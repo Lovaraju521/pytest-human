@@ -12,7 +12,7 @@ def test_search_simple_keyboard(pytester: pytest.Pytester, page: Page) -> None:
 
     pytester.makepyfile("""
         def test_example(human):
-            human.info("funkadelic.")
+            human.log.info("funkadelic.")
     """)
 
     result = pytester.runpytest_subprocess("--enable-html-log", "--log-level=info")
@@ -37,7 +37,7 @@ def test_search_simple(pytester: pytest.Pytester, page: Page) -> None:
 
     pytester.makepyfile("""
         def test_example(human):
-            human.info("searching for this quintessential text")
+            human.log.info("searching for this quintessential text")
     """)
 
     result = pytester.runpytest_subprocess("--enable-html-log", "--log-level=info")
@@ -63,10 +63,10 @@ def test_search_multiple_results_keyboard(pytester: pytest.Pytester, page: Page)
 
     pytester.makepyfile("""
         def test_example(human):
-            human.info("first test occurrence")
-            human.info("second test occurrence")
-            human.info("third test occurrence")
-            human.info("fourth test occurrence")
+            human.log.info("first test occurrence")
+            human.log.info("second test occurrence")
+            human.log.info("third test occurrence")
+            human.log.info("fourth test occurrence")
     """)
 
     result = pytester.runpytest_subprocess("--enable-html-log", "--log-level=info")
@@ -103,10 +103,10 @@ def test_search_multiple_results(pytester: pytest.Pytester, page: Page) -> None:
 
     pytester.makepyfile("""
         def test_example(human):
-            human.info("first test occurrence")
-            human.info("second test occurrence")
-            human.info("third test occurrence")
-            human.info("fourth test occurrence")
+            human.log.info("first test occurrence")
+            human.log.info("second test occurrence")
+            human.log.info("third test occurrence")
+            human.log.info("fourth test occurrence")
     """)
 
     result = pytester.runpytest_subprocess("--enable-html-log", "--log-level=info")
@@ -147,8 +147,8 @@ def test_search_wrap_around(pytester: pytest.Pytester, page: Page) -> None:
 
     pytester.makepyfile("""
         def test_example(human):
-            human.info("first test occurrence")
-            human.info("second test occurrence")
+            human.log.info("first test occurrence")
+            human.log.info("second test occurrence")
     """)
 
     result = pytester.runpytest_subprocess("--enable-html-log", "--log-level=info")
@@ -188,10 +188,10 @@ def test_search_within_spans_expands(pytester: pytest.Pytester, page: Page) -> N
 
     pytester.makepyfile("""
         def test_example(human):
-            with human.span_info("Styled Text Span"):
-                human.info("quintessential")
-                with human.span_info("Nested Span"):
-                    human.info("expeditious")
+            with human.log.span.info("Styled Text Span"):
+                human.log.info("quintessential")
+                with human.log.span.info("Nested Span"):
+                    human.log.info("expeditious")
     """)
 
     result = pytester.runpytest_subprocess("--enable-html-log", "--log-level=info")

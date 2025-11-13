@@ -1,3 +1,5 @@
+import warnings
+
 import pytest
 
 import pytest_human._flags as flags

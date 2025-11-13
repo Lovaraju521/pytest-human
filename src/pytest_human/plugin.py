@@ -214,7 +214,7 @@ class HtmlLogPlugin:
                 )
 
     @pytest.fixture(autouse=True)
-    def relocate_test_log(self, request: pytest.FixtureRequest, tmp_path: Path) -> None:
+    def _relocate_test_log(self, request: pytest.FixtureRequest, tmp_path: Path) -> None:
         """Fixture to relocate the test log file to the test temporary directory if needed."""
         item = request.node
         if not is_output_to_test_tmp(item.config):
@@ -228,7 +228,7 @@ class HtmlLogPlugin:
         item.stash[self.log_path_key] = new_log_path
 
     @pytest.fixture
-    def human_test_log_path(self, request: pytest.FixtureRequest, relocate_test_log: None) -> Path:
+    def human_test_log_path(self, request: pytest.FixtureRequest, _relocate_test_log: None) -> Path:
         """Fixture to get the HTML log file path for the current test."""
         item = request.node
         log_path = item.stash[self.log_path_key]

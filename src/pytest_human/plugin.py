@@ -15,8 +15,8 @@ import pytest
 from _pytest.nodes import Node
 from rich.pretty import pretty_repr
 
-from pytest_human._exceptions import HumanLogLevelWarning
 from pytest_human._flags import is_output_to_test_tmp
+from pytest_human.exceptions import HumanLogLevelWarning
 from pytest_human.html_report import HtmlFileHandler
 from pytest_human.log import TestLogger, _SpanEndFilter, get_logger
 
@@ -51,26 +51,26 @@ class HtmlLogPlugin:
         return get_logger(item.name)
 
     @staticmethod
-    def get_session_scoped_logs_dir(item: pytest.Item) -> Path:
+    def _get_session_scoped_logs_dir(item: pytest.Item) -> Path:
         """Get the session-scoped logs directory."""
         path = item.session.config._tmp_path_factory.getbasetemp() / "session_logs"  # type: ignore # noqa: SLF001
         path.mkdir(parents=True, exist_ok=True)
         return path
 
     @classmethod
-    def session_scoped_test_log_path(cls, item: pytest.Item) -> Path:
+    def _session_scoped_test_log_path(cls, item: pytest.Item) -> Path:
         """Get the session-scoped test log path."""
-        logs_dir = cls.get_session_scoped_logs_dir(item)
-        return cls.get_test_log_path(item, logs_dir)
+        logs_dir = cls._get_session_scoped_logs_dir(item)
+        return cls._get_test_log_path(item, logs_dir)
 
     @staticmethod
-    def get_test_log_path(item: pytest.Item, logs_dir: Path) -> Path:
+    def _get_test_log_path(item: pytest.Item, logs_dir: Path) -> Path:
         """Create a test log path inside the given logs directory."""
         logs_dir = logs_dir.resolve()
         safe_test_name = re.sub(r"[^\w]", "_", item.name)[:35]
         return logs_dir / f"{safe_test_name}.html"
 
-    def get_test_doc_string(self, item: pytest.Item) -> str | None:
+    def _get_test_doc_string(self, item: pytest.Item) -> str | None:
         """Get the docstring of the test function, if any."""
         if test := getattr(item, "obj", None):
             return inspect.getdoc(test)
@@ -84,7 +84,7 @@ class HtmlLogPlugin:
 
         return ""
 
-    def get_log_level(self, item: pytest.Item) -> int:
+    def _get_log_level(self, item: pytest.Item) -> int:
         """Get the log level for the test item."""
         log_level_name = "DEBUG"
 
@@ -101,7 +101,7 @@ class HtmlLogPlugin:
         return logging.getLevelName(log_level_name.upper())
 
     @classmethod
-    def write_html_log_path(cls, item: pytest.Item, log_path: Path, flush: bool = False) -> None:
+    def _write_html_log_path(cls, item: pytest.Item, log_path: Path, flush: bool = False) -> None:
         """Log the HTML log path to the terminal."""
 
         if item.config.getoption("quiet", item.config.getoption("html_quiet")):
@@ -133,12 +133,12 @@ class HtmlLogPlugin:
 
         item.stash[self.log_path_key] = log_path
 
-        level = self.get_log_level(item)
+        level = self._get_log_level(item)
 
         html_handler = HtmlFileHandler(
             log_path.as_posix(),
             title=item.name,
-            description=self.get_test_doc_string(item),
+            description=self._get_test_doc_string(item),
         )
         item.stash[self.html_log_handler_key] = html_handler
         html_handler.setLevel(level)
@@ -172,18 +172,18 @@ class HtmlLogPlugin:
             handler.removeFilter(_SpanEndFilter())
 
         log_path = item.stash[self.log_path_key]
-        self.write_html_log_path(item, log_path, flush=True)
+        self._write_html_log_path(item, log_path, flush=True)
 
     def _get_log_path(self, item: pytest.Item) -> Path:
         if custom_dir := item.config.getoption("html_output_dir"):
             custom_dir.resolve().mkdir(parents=True, exist_ok=True)
-            return self.get_test_log_path(item, custom_dir)
+            return self._get_test_log_path(item, custom_dir)
 
         if item.config.getoption("html_use_test_tmp"):
             # Will be transferred on test setup to the correct location
-            return self.session_scoped_test_log_path(item)
+            return self._session_scoped_test_log_path(item)
 
-        return self.session_scoped_test_log_path(item)
+        return self._session_scoped_test_log_path(item)
 
     def _format_fixture_call(
         self, fixturedef: pytest.FixtureDef, request: pytest.FixtureRequest

@@ -5,6 +5,7 @@ from __future__ import annotations
 import inspect
 import logging
 import re
+import warnings
 from collections.abc import Iterator
 from contextlib import suppress
 from pathlib import Path
@@ -14,6 +15,7 @@ import pytest
 from _pytest.nodes import Node
 from rich.pretty import pretty_repr
 
+from pytest_human._exceptions import HumanLogLevelWarning
 from pytest_human._flags import is_output_to_test_tmp
 from pytest_human.html_report import HtmlFileHandler
 from pytest_human.log import TestLogger, _SpanEndFilter, get_logger
@@ -28,6 +30,7 @@ class HtmlLogPlugin:
 
     def __init__(self) -> None:
         self.test_tmp_path = None
+        self._warned_about_log_level = False
 
     @classmethod
     def register(cls, config: pytest.Config) -> HtmlLogPlugin:
@@ -141,6 +144,16 @@ class HtmlLogPlugin:
         html_handler.setLevel(level)
         root_logger.addHandler(html_handler)
 
+        if not self._warned_about_log_level and root_logger.level > level:
+            warnings.warn(
+                f"The root logger level {logging.getLevelName(root_logger.level)} is higher than "
+                f"the HTML log level {logging.getLevelName(level)}."
+                " This means logs will be missing from the HTML log."
+                "\nConsider setting the root logger level lower using the --log-level option.",
+                HumanLogLevelWarning,
+            )
+            self._warned_about_log_level = True
+
         filtered_handlers = []
 
         for handler in root_logger.handlers:
@@ -227,6 +240,7 @@ class HtmlLogPlugin:
         handler.relocate(new_log_path)
         item.stash[self.log_path_key] = new_log_path
 
+    # Depend on _relocate_test_log fixture to ensure it runs first
     @pytest.fixture
     def human_test_log_path(self, request: pytest.FixtureRequest, _relocate_test_log: None) -> Path:
         """Fixture to get the HTML log file path for the current test."""
@@ -236,14 +250,15 @@ class HtmlLogPlugin:
 
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_setup(self, item: pytest.Item) -> Iterator[None]:
-        """Start a unified span covering all fixture setup for this test item."""
+        """Start a span covering all fixture setup for this test item."""
+
         logger = self._get_test_logger(item)
         with logger.span_info("Test setup"):
             yield
 
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_teardown(self, item: pytest.Item, nextitem: object) -> Iterator[None]:
-        """Start a unified span covering all fixture cleanup (teardown) for this test item."""
+        """Start a span covering all fixture cleanup (teardown) for this test item."""
 
         logger = self._get_test_logger(item)
         with logger.span_info("Test teardown"):

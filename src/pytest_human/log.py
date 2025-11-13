@@ -21,7 +21,7 @@ _log_local = threading.local()
 
 
 class TestLogger(logging.LoggerAdapter):
-    """A logger adapter (wrapper) class that adds a trace method, support for spans and syntax highlighting."""
+    """A logger adapter (wrapper) that adds a trace method, spans and syntax highlighting."""
 
     __test__ = False
     TRACE = TRACE_LEVEL_NUM

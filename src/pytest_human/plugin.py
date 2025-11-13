@@ -227,6 +227,13 @@ class HtmlLogPlugin:
         handler.relocate(new_log_path)
         item.stash[self.log_path_key] = new_log_path
 
+    @pytest.fixture
+    def human_test_log_path(self, request: pytest.FixtureRequest, relocate_test_log: None) -> Path:
+        """Fixture to get the HTML log file path for the current test."""
+        item = request.node
+        log_path = item.stash[self.log_path_key]
+        return log_path
+
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_setup(self, item: pytest.Item) -> Iterator[None]:
         """Start a unified span covering all fixture setup for this test item."""

@@ -37,51 +37,51 @@ pip install pytest-human
 
 1. Enable the plugin when running pytest:
 
-```bash
-pytest --enable-html-log --log-level DEBUG --html-output-dir output/
-```
+    ```bash
+    pytest --enable-html-log --log-level DEBUG --html-output-dir output/
+    ```
 
-Setting the log level is important as the pytest default is high (`WARNING`).
+    Setting the log level is important as the pytest default is high (`WARNING`).
 
 2. Use the `human` objects in your tests:
 
-```python
-from pytest_human.log import log_call
+    ```python
+    from pytest_human.log import log_call
 
-@log_call()
-def insert_db(data):
-    query = "INSERT INTO flowers (petals) VALUES ('{{1,2,3,4,5}}');"
-    logging.info(f"executing {query=}")
-    return len(data)
+    @log_call()
+    def insert_db(data):
+        query = "INSERT INTO flowers (petals) VALUES ('{{1,2,3,4,5}}');"
+        logging.info(f"executing {query=}")
+        return len(data)
 
-def test_example(human):
-    """This test demonstrates pytest-human logging."""
-    human.info("Established test agent connection")
+    def test_example(human):
+        """This test demonstrates pytest-human logging."""
+        human.info("Established test agent connection")
 
-    with human.span_info("Generating sample data"):
-        data = [1, 2, 3, 4, 5]
-        human.info(f"Loaded sample data {data=} {len(data)=}", highlight=True)
-        insert_db(data)
+        with human.span_info("Generating sample data"):
+            data = [1, 2, 3, 4, 5]
+            human.info(f"Loaded sample data {data=} {len(data)=}", highlight=True)
+            insert_db(data)
 
-        with human.span_debug("Validating sample"):
-            result = sum(data)
-            human.debug(f"Sum {result=}", highlight=True)
+            with human.span_debug("Validating sample"):
+                result = sum(data)
+                human.debug(f"Sum {result=}", highlight=True)
 
-    assert result == 15
-```
+        assert result == 15
+    ```
 
 3. Open the HTML test report
 
-At the end of individual tests you will see a similar line:
+    At the end of individual tests you will see a similar line:
 
-```console
-🌎 Test test_single_stage_ui HTML log at file:///tmp/pytest-of-john.doe/pytest-2/session_logs/test_frobulator.html
-```
+    ```console
+    🌎 Test test_single_stage_ui HTML log at file:///tmp/pytest-of-john.doe/pytest-2/session_logs/test_frobulator.html
+    ```
 
-You can <kbd>Ctrl</kbd>/<kbd>⌘</kbd>-click the link in most terminals to open the file.
+    You can <kbd>Ctrl</kbd>/<kbd>⌘</kbd>-Click the link in most terminals to open the file.
 
 4. Debug!
-  ![Screenshot](assets/test_example.png) 
+    ![Screenshot](assets/test_example.png) 
 
 
 ## Command Line Options

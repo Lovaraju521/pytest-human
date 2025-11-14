@@ -453,13 +453,19 @@ class HtmlFileFormatter(logging.Formatter):
                 font-weight: bold;
                 color: #0366d6;
                 font-size: 16px;
+                transition: color 0.2s ease-in-out;
             }
 
             .toggle-cell button {
                 all: unset;
+                color: inherit;
                 cursor: pointer;
                 outline: revert;
                 outline-offset: 3px;
+            }
+
+            .toggle-cell:hover {
+                color: #117af3;
             }
 
             .source-cell {

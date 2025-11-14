@@ -129,7 +129,7 @@ class HtmlRecordFormatter(logging.Formatter):
             <td class="msg-cell">{escaped_msg}</td>
             <td class="duration-cell" id="{duration_id}">...</td>
         </tr>
-        <tr id="{block_id}" class="nested-block" style="display: none;">
+        <tr id="{block_id}" class="nested-block" aria-expanded="false" style="display: none;">
             <td colspan="6">
                 <table class="log-table">
         """
@@ -198,6 +198,7 @@ class HtmlFileFormatter(logging.Formatter):
         <html lang="en">
         <head>
             <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>{html.escape(self._title)}</title>
             <style>{self._get_css()}</style>
             <style>{self._code_formatter.get_style_defs(".msg-cell")}</style>
@@ -243,7 +244,7 @@ class HtmlFileFormatter(logging.Formatter):
                 </div>
             </div>
             <div class="log-container">
-                <table class="log-table">
+                <table class="log-table" role="treegrid">
         """  # noqa: E501
 
     def format_footer(self) -> str:
@@ -735,10 +736,12 @@ class HtmlFileFormatter(logging.Formatter):
                     const t = document.getElementById('toggle-' + id);
                     if (e.style.display === 'none') {
                         e.style.display = 'table-row';
+                        e.setAttribute('aria-expanded', 'true');
                         // endash for width consistency
                         t.textContent = '[–]';
                     } else {
                         e.style.display = 'none';
+                        e.setAttribute('aria-expanded', 'false');
                         t.textContent = '[+]';
                     }
                 }

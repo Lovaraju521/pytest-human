@@ -585,11 +585,6 @@ def test_logging_trace_public_api_class(pytester: pytest.Pytester, page: Page) -
 
 
 def test_asserts_passing_expect_log(pytester: pytest.Pytester, page: Page) -> None:
-    pytester.makeini("""
-        [pytest]
-        enable_assertion_pass_hook = true
-    """)
-
     pytester.makepyfile("""
         def test_asserts(human):
             x = False
@@ -606,21 +601,3 @@ def test_asserts_passing_expect_log(pytester: pytest.Pytester, page: Page) -> No
     expect(log_lines.locator("td.level-cell")).to_have_text("DEBUG")
     expect(log_lines.locator("td.source-cell")).to_have_text("test_asserts")
     expect(log_lines.locator("td.msg-cell")).to_have_text("assert False is False")
-
-
-def test_asserts_noini_expect_warning(pytester: pytest.Pytester, page: Page) -> None:
-    pytester.makepyfile("""
-        def test_asserts(human):
-            x = False
-            assert False is False
-    """)
-
-    result = pytester.runpytest_subprocess("--enable-html-log", "--log-level=debug")
-    assert result.ret == 0
-
-    result.stderr.re_match_lines(
-        [
-            r".*HumanUsageWarning: Add 'enable_assertion_pass_hook=true'"
-            r" to pytest.ini to support assertion logging.",
-        ]
-    )

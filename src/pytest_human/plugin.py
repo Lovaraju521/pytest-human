@@ -364,8 +364,8 @@ class HtmlLogPlugin:
         if report.when != "teardown":
             return
 
-        logger = get_logger(report.nodeid)
         human: Human = report.item.stash.get(self.human_logger_key, None)
+        logger = self._get_test_logger(report.item)
 
         with logger.span.info("Test artifacts"):
             for section_name, content in report.sections:

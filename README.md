@@ -179,7 +179,6 @@ def test_spans(human):
     with human.log.span.info("Phase 1: Initialization"):
         human.log.debug("Initializing resources...")
         
-        # Nested span
         with human.log.span.debug("Loading configuration"):
             human.log.trace("Reading config file")
             config = load_config()
@@ -187,7 +186,6 @@ def test_spans(human):
         
         human.log.info("Initialization complete")
     
-    # Another top-level span
     with human.log.span.info("Phase 2: Processing"):
         human.log.debug("Processing data...")
         process_data()

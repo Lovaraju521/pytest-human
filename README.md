@@ -8,10 +8,8 @@
 
 A pytest plugin for generating beautiful, human-readable HTML reports for individual tests with collapsible nested logging spans and syntax highlighting. Inspired by Robot Framework and Playwright reports.
 
-Unlike other pytest HTML report plugins, **pytest-human** creates a separate HTML log file for each test, aimed at diving into specific parts of the test that are relevant for debugging.
-No need to rewrite existing tests!.
-
-https://github.com/user-attachments/assets/831b53ea-cf7f-468d-9303-335e444525e9
+Unlike other pytest HTML report plugins, **pytest-human** creates a separate HTML log file for each test, aimed at helping you dive into specific parts of the test that are relevant for debugging.
+Works with standard python logging, no need to rewrite existing tests to get going!
 
 
 ## Features
@@ -26,6 +24,10 @@ https://github.com/user-attachments/assets/831b53ea-cf7f-468d-9303-335e444525e9
 * Regex search in collapsed spans
 * Artifacts collection
 * Support for existing native python logging
+
+## Demo 
+
+https://github.com/user-attachments/assets/831b53ea-cf7f-468d-9303-335e444525e9
 
 ## Installation
 
@@ -74,7 +76,7 @@ pip install pytest-human
         assert result == 15
     ```
 
-3. Open the HTML test report
+3. Open the HTML test log
 
     At the end of individual tests you will see a similar line:
 
@@ -108,9 +110,11 @@ Control where HTML logs are saved:
 pytest --html-output-dir /path/to/logs
 
 # By default logs are saved in the session temp directory with the test name
+# e.g. /tmp/pytest-of-user.name/pytest-446/session_logs/test_method_tracing.html
 pytest --enable-html-log 
 
-# Save in individual test temporary directories as test.log
+# Save in individual test temporary directories as test.html
+# e.g. /tmp/pytest-of-user.name/pytest-446/session_logs/test_examplecurrent/test.html
 pytest --enable-html-log --html-use-test-tmp
 ```
 
@@ -126,18 +130,19 @@ pytest --enable-html-log --log-level DEBUG
 # Set log level for HTML logs specifically.
 # This requires the root logger to be properly configured.
 pytest --enable-html-log --html-log-level INFO
-
 ```
 
-Setting the log level is critical, especially in the root log level as a lot of human's basic features are only available in `INFO`/`DEBUG` levels.
-Setting the root log level is taken care of by pytest `--log-level` settings.
+`--html-log-level` controls the html logger directly but might still be restricted by the python root level. 
+The root logger level can be tweaked programatically or using the `--log-level` parameter. `--html-log-level` default to `DEBUG` while in pytest the root log level defaults to `WARNING`.
+
+For human features to work, ensure the root logger is set to `DEBUG` or `TRACE` using `--log-level`.
 
 ## Logger API
 
 ### Fixtures
 
 - `human` - Supplies a human object to the test. Includes a logger and attachment collector.
-- `test_log` - Supplies a logger to the test, equivalent to `human.log`. For helpers/fixtures prefer using `get_logger` instead. 
+- `test_log` - Supplies a logger to the test, equivalent to `human.log`.
 - `human_test_log_path` - Path of the html log file for the current test
 ### Logging Methods
 
@@ -161,6 +166,18 @@ def test_logging_methods(human):
         return volume > 0.5:
     """
     human.log.info(code, highlight=True)
+```
+
+### Direct logger access
+
+Get the test logger programmatically, this allows to tweak the source name and is useful if you don't want to pass the human object around.
+
+```python
+from pytest_human.log import get_logger
+
+def test_programmatic_logger():
+    logger = get_logger(__name__)
+    logger.info("Custom logger")
 ```
 
 ### Collapsible Spans
@@ -192,14 +209,6 @@ def test_spans(human):
     
     human.log.info("Operation completed")
 ```
-
-Available span methods:
-- `span_trace(message)` - TRACE level span
-- `span_debug(message)` - DEBUG level span
-- `span_info(message)` - INFO level span
-- `span_warning(message)` - WARNING level span
-- `span_error(message)` - ERROR level span
-- `span_critical(message)` - CRITICAL level span
 
 ## Method Tracing
 
@@ -242,6 +251,9 @@ def test_method_tracing(human):
 * `suppress_self` - do not show the `self` argument logging function parameters, default `True`
 * `log_level` - set a log level for the method trace
 
+Note: tracing will have some performance implications on method calls, also you should limit using `@traced` on frequently
+called functions as to reduce log noise.
+
 ### Third-party method tracing
 
 The `@traced` decorator is very useful for debugging but it is unfortunately restricted to code you own.
@@ -251,6 +263,10 @@ In order to log third-party methods, you can use the `trace_calls` and `trace_pu
 `trace_calls` adds logging to a list of functions, while `trace_public_api` adds logging to all public methods of modules/classes.
 
 ```python
+import pytest
+from playwright.sync_api import Locator, LocatorAssertionsImpl, Page
+from pytest_human.log import trace_calls, trace_public_api
+
 @pytest.fixture(autouse=True)
 def log_3rdparty_methods():
     with (
@@ -259,7 +275,7 @@ def log_3rdparty_methods():
             pytest.Pytester.makepyfile,
         ),
         trace_calls(Page.screenshot, suppress_return=True),
-        # this skips Page.screenshot as it is already defined above
+        # this skips retracing Page.screenshot as it is already defined above
         trace_public_api(Page, Locator, LocatorAssertionsImpl),
     ):
         yield
@@ -268,14 +284,14 @@ def log_3rdparty_methods():
 
 ## Artifacts
 
-Sometimes you might have extra logs that are generated by subprocesses or used external resources such as Kuberentes, Docker or others.
+Sometimes you might have extra logs that are generated by subprocesses or used external resources such as Kubernetes, Docker or others.
 Human automatically collects stdout/stderr and allows you to collect custom logs to be attached to the log.
 
 ![Screenshot](assets/test_artifacts.png)
 
 ```python
 def test_artifacts(human):
-    human.log.info("Attaching artifacts to the test report")
+    human.log.info("Attaching artifacts to the test log")
 
     print("logging something to stdout")
 
@@ -303,18 +319,6 @@ def test_standard_logging(human):
     # Standard Python logger - also captured in HTML
     logger = logging.getLogger(__name__)
     logger.info("Using standard logger")
-```
-
-### Direct logger access
-
-Get the test logger programmatically, useful for fixtures or inside helper functions:
-
-```python
-from pytest_human.log import get_logger
-
-def test_programmatic_logger():
-    logger = get_logger(__name__)
-    logger.info("Custom logger")
 ```
 
 ### TRACE Logging

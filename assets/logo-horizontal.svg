@@ -27,16 +27,16 @@
         stroke: #555555;
       }
 
-      .band-1  { fill: #0b57b8; } 
-      .band-2  { fill: #0e77cf; }
-      .band-3  { fill: #1293e0; }
-      .band-4  { fill: #1ea6e7; }
-      .band-5  { fill: #2bb7f0; }
-      .band-6  { fill: #3bcdf4; }
-      .band-7  { fill: #54ddff; }
-      .band-8  { fill: #7ce5ff; }
-      .band-9  { fill: #a3eeff; }
-      .band-10 { fill: #cbf7ff; }      
+      .band-1  { fill: #08306b; } 
+      .band-2  { fill: #094085; }
+      .band-3  { fill: #0b509e; }
+      .band-4  { fill: #0b60b8; }
+      .band-5  { fill: #0d75cf; }
+      .band-6  { fill: #118ae0; }
+      .band-7  { fill: #189ee9; }
+      .band-8  { fill: #25b3f0; }
+      .band-9  { fill: #3ec7f4; }
+      .band-10 { fill: #66d9ff; }
     }
 
   </style>

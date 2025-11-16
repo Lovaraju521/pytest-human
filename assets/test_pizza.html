@@ -1,0 +1,1949 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>test_full_pizza_order_workflow</title>
+            <style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                  Roboto, Helvetica, Arial, sans-serif;
+                background-color: #f0f2f5;
+                color: #24292e;
+                margin: 0;
+                padding: 0;
+            }
+            .report-header {
+                background-color: #1667b7;
+                color: #f6f8fa;
+                padding: 16px 24px;
+                border-bottom: 1px solid #d1d5da;
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+            }
+            .header-main {
+                flex-grow: 1;
+            }
+            .report-header h1 {
+                margin: 0;
+                font-size: 1.4rem;
+                font-weight: 600;
+            }
+            .report-header p {
+                margin: 4px 0 0;
+                font-size: 0.8rem;
+                opacity: 0.8;
+                max-width: 70%;
+            }
+
+            .search-container {
+                display: flex;
+                align-items: center;
+                background-color: #ffffff;
+                border: 1px solid #d0d7de;
+                border-radius: 30px;
+                padding: 5px 12px;
+                min-width: 380px;
+                transition: all 0.2s ease-in-out;
+                box-shadow: 0 1px 2px rgba(27,31,35,0.075);
+            }
+            .search-container:focus-within {
+                border-color: #0969da;
+                box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.3);
+            }
+            .search-icon {
+                width: 18px;
+                height: 18px;
+                flex-shrink: 0;
+                color: #57606a;
+                margin-right: 8px;
+            }
+            #search-input {
+                flex-grow: 1;
+                border: none;
+                outline: none;
+                background-color: transparent;
+                color: #24292e;
+                font-size: 14px;
+                padding: 4px;
+                margin-right: 8px;
+            }
+            #search-input::placeholder {
+                color: #57606a;
+            }
+            #search-input.search-error {
+                color: #e14b4b;
+            }
+            .search-controls {
+                display: flex;
+                align-items: center;
+                margin-left: 8px;
+            }
+            .search-controls button {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: #f6f8fa;
+                border: 1px solid #d0d7de;
+                color: #57606a;
+                width: 24px;
+                height: 24px;
+                border-radius: 6px;
+                cursor: pointer;
+                margin: 0 2px;
+                padding: 0;
+                transition: background-color 0.2s;
+            }
+            .search-controls button:hover {
+                background-color: #eef1f4;
+            }
+            #clear-search-btn {
+                display: flex;
+                visibility: hidden;
+                align-items: center;
+                justify-content: center;
+                background: transparent;
+                border: none;
+                color: #57606a;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                cursor: pointer;
+                padding: 0;
+                margin: 0 4px;
+                flex-shrink: 0;
+            }
+            #clear-search-btn:hover {
+                background-color: #eef1f4;
+            }
+            #search-counter {
+               font-size: 13px;
+               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                Roboto, Helvetica, Arial, sans-serif;
+               color: #57606a;
+               padding-left: 10px;
+               margin-left: 8px;
+               border-left: 1px solid #d8dee4;
+               white-space: nowrap;
+               line-height: 1;
+               min-width: 55px;
+               text-align: center;
+            }
+
+            .highlight {
+                background-color: yellow;
+                color: black;
+                white-space: nowrap;
+            }
+
+            .highlight.highlight-start {
+                border-top-left-radius: 2px;
+                border-bottom-left-radius: 2px;
+                padding-left: 1px;
+            }
+
+            .highlight.highlight-end {
+                border-top-right-radius: 2px;
+                border-bottom-right-radius: 2px;
+                padding-right: 1px;
+            }
+
+            .highlight.active {
+                background-color: orange;
+            }
+
+            .log-container {
+                margin: 20px;
+                border: 1px solid #d1d5da;
+                background-color: #fff;
+                box-shadow: 0 1px 5px rgba(27,31,35,0.08);
+                border-radius: 6px;
+                overflow: hidden;
+            }
+            .log-table {
+                width: 100%;
+                border-collapse: collapse;
+                table-layout: fixed;
+            }
+            .log-table td {
+                padding: 8px 12px;
+                border-bottom: 1px solid #e1e4e8;
+                text-align: left;
+                vertical-align: top;
+                font-size: 0.8rem;
+            }
+
+            .log-table tr:last-child td { border-bottom: none; }
+
+            .time-cell {
+                font-variant-numeric: tabular-nums;
+            }
+
+            .toggle-cell {
+                cursor: pointer;
+                user-select: none;
+                font-weight: bold;
+                color: #0366d6;
+                font-size: 16px;
+                transition: color 0.2s ease-in-out;
+            }
+
+            .toggle-cell button {
+                all: unset;
+                color: inherit;
+                cursor: pointer;
+                outline: revert;
+                outline-offset: 3px;
+            }
+
+            .toggle-cell:hover {
+                color: #117af3;
+            }
+
+            .source-cell {
+                color: #586069;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .msg-cell {
+                word-break: break-all;
+                font-family: Consolas, "SFMono-Regular", Menlo, Monaco,
+                    "Liberation Mono", "Courier New", monospace;
+                white-space: pre-wrap;
+            }
+
+            td.duration-cell {
+                text-align: right;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .nested-block > td {
+                padding-left: 2rem;
+            }
+
+            td.nested-block-td {
+                padding-right: 0px;
+            }
+
+            .nested-block > td > table {
+                border-left: 2px solid #f6f8fa;
+            }
+
+            .log-level-trace td:nth-child(3) { color: #838383; }
+            .log-level-debug td:nth-child(3) { color: #0366d6; }
+            .log-level-info { /* Default text color */ }
+            .log-level-warning { background-color: #fffbdd; }
+            .log-level-warning td:nth-child(3) { font-weight: 600; color: #5c4000; }
+            .log-level-error { background-color: #ffeef0; font-weight: 600; }
+            .log-level-error td:nth-child(3) { font-weight: 600; color: #d73a49; }
+            .log-level-critical { background-color: pink; color: #000000; font-weight: 600; }
+        </style>
+            <style>pre { line-height: 125%; }
+td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+.msg-cell .hll { background-color: #f0f2f5 }
+.msg-cell .c { color: #586069; font-style: italic } /* Comment */
+.msg-cell .err { color: #D73A49; background-color: #D1D5DA } /* Error */
+.msg-cell .esc { color: #24292E } /* Escape */
+.msg-cell .g { color: #24292E } /* Generic */
+.msg-cell .k { color: #0366D6; font-weight: bold } /* Keyword */
+.msg-cell .l { color: #24292E } /* Literal */
+.msg-cell .n { color: #24292E } /* Name */
+.msg-cell .o { color: #1667B7 } /* Operator */
+.msg-cell .x { color: #24292E } /* Other */
+.msg-cell .p { color: #24292E } /* Punctuation */
+.msg-cell .ch { color: #586069; font-style: italic } /* Comment.Hashbang */
+.msg-cell .cm { color: #586069; font-style: italic } /* Comment.Multiline */
+.msg-cell .cp { color: #1667B7; font-style: italic } /* Comment.Preproc */
+.msg-cell .cpf { color: #586069; font-style: italic } /* Comment.PreprocFile */
+.msg-cell .c1 { color: #586069; font-style: italic } /* Comment.Single */
+.msg-cell .cs { color: #586069; font-style: italic } /* Comment.Special */
+.msg-cell .gd { color: #D73A49 } /* Generic.Deleted */
+.msg-cell .ge { color: #24292E; font-style: italic } /* Generic.Emph */
+.msg-cell .ges { color: #24292E } /* Generic.EmphStrong */
+.msg-cell .gr { color: #D73A49; font-weight: bold } /* Generic.Error */
+.msg-cell .gh { color: #1667B7; font-weight: bold } /* Generic.Heading */
+.msg-cell .gi { color: #005C5C } /* Generic.Inserted */
+.msg-cell .go { color: #586069 } /* Generic.Output */
+.msg-cell .gp { color: #586069 } /* Generic.Prompt */
+.msg-cell .gs { color: #24292E; font-weight: bold } /* Generic.Strong */
+.msg-cell .gu { color: #0366D6; font-weight: bold } /* Generic.Subheading */
+.msg-cell .gt { color: #D73A49 } /* Generic.Traceback */
+.msg-cell .kc { color: #1667B7; font-weight: bold } /* Keyword.Constant */
+.msg-cell .kd { color: #0366D6; font-weight: bold } /* Keyword.Declaration */
+.msg-cell .kn { color: #1667B7; font-weight: bold } /* Keyword.Namespace */
+.msg-cell .kp { color: #0366D6; font-weight: bold } /* Keyword.Pseudo */
+.msg-cell .kr { color: #0366D6; font-weight: bold } /* Keyword.Reserved */
+.msg-cell .kt { color: #1667B7; font-weight: bold } /* Keyword.Type */
+.msg-cell .ld { color: #24292E } /* Literal.Date */
+.msg-cell .m { color: #6F42C1 } /* Literal.Number */
+.msg-cell .s { color: #005C5C } /* Literal.String */
+.msg-cell .na { color: #24292E } /* Name.Attribute */
+.msg-cell .nb { color: #0366D6 } /* Name.Builtin */
+.msg-cell .nc { color: #1667B7; font-weight: bold } /* Name.Class */
+.msg-cell .no { color: #1667B7 } /* Name.Constant */
+.msg-cell .nd { color: #1667B7; font-weight: bold } /* Name.Decorator */
+.msg-cell .ni { color: #24292E } /* Name.Entity */
+.msg-cell .ne { color: #24292E } /* Name.Exception */
+.msg-cell .nf { color: #1667B7; font-weight: bold } /* Name.Function */
+.msg-cell .nl { color: #24292E } /* Name.Label */
+.msg-cell .nn { color: #24292E } /* Name.Namespace */
+.msg-cell .nx { color: #24292E } /* Name.Other */
+.msg-cell .py { color: #24292E } /* Name.Property */
+.msg-cell .nt { color: #0366D6; font-weight: bold } /* Name.Tag */
+.msg-cell .nv { color: #24292E } /* Name.Variable */
+.msg-cell .ow { color: #0366D6; font-weight: bold } /* Operator.Word */
+.msg-cell .pm { color: #24292E } /* Punctuation.Marker */
+.msg-cell .w { color: #24292E } /* Text.Whitespace */
+.msg-cell .mb { color: #6F42C1 } /* Literal.Number.Bin */
+.msg-cell .mf { color: #6F42C1 } /* Literal.Number.Float */
+.msg-cell .mh { color: #6F42C1 } /* Literal.Number.Hex */
+.msg-cell .mi { color: #6F42C1 } /* Literal.Number.Integer */
+.msg-cell .mo { color: #6F42C1 } /* Literal.Number.Oct */
+.msg-cell .sa { color: #005C5C } /* Literal.String.Affix */
+.msg-cell .sb { color: #005C5C } /* Literal.String.Backtick */
+.msg-cell .sc { color: #005C5C } /* Literal.String.Char */
+.msg-cell .dl { color: #005C5C } /* Literal.String.Delimiter */
+.msg-cell .sd { color: #586069; font-style: italic } /* Literal.String.Doc */
+.msg-cell .s2 { color: #005C5C } /* Literal.String.Double */
+.msg-cell .se { color: #6F42C1; font-weight: bold } /* Literal.String.Escape */
+.msg-cell .sh { color: #005C5C } /* Literal.String.Heredoc */
+.msg-cell .si { color: #005C5C } /* Literal.String.Interpol */
+.msg-cell .sx { color: #005C5C } /* Literal.String.Other */
+.msg-cell .sr { color: #005C5C } /* Literal.String.Regex */
+.msg-cell .s1 { color: #005C5C } /* Literal.String.Single */
+.msg-cell .ss { color: #005C5C } /* Literal.String.Symbol */
+.msg-cell .bp { color: #0366D6 } /* Name.Builtin.Pseudo */
+.msg-cell .fm { color: #1667B7; font-weight: bold } /* Name.Function.Magic */
+.msg-cell .vc { color: #24292E } /* Name.Variable.Class */
+.msg-cell .vg { color: #24292E } /* Name.Variable.Global */
+.msg-cell .vi { color: #24292E } /* Name.Variable.Instance */
+.msg-cell .vm { color: #24292E } /* Name.Variable.Magic */
+.msg-cell .il { color: #6F42C1 } /* Literal.Number.Integer.Long */</style>
+            <script>
+                let searchResults = [];
+                let currentResultIndex = -1;
+
+                document.addEventListener('keydown', function (event) {
+                    const searchInput = document.getElementById('search-input');
+                    if (event.key === '/') {
+                        event.preventDefault();
+                        searchInput.focus();
+                    } else if (event.key === 'Escape') {
+                        searchInput.blur();
+                    } else if (event.key === 'Enter' && document.activeElement === searchInput) {
+                        event.preventDefault();
+                        if (event.shiftKey) {
+                            prevResult();
+                        } else {
+                            nextResult();
+                        }
+                    }
+                });
+
+                function removeHighlights(rootElement) {
+                    const highlights = rootElement.querySelectorAll('.highlight');
+                    for (let i = highlights.length - 1; i >= 0; i--) {
+                        const highlight = highlights[i];
+                        const parent = highlight.parentNode;
+                        while (highlight.firstChild) {
+                            parent.insertBefore(highlight.firstChild, highlight);
+                        }
+                        parent.removeChild(highlight);
+                        parent.normalize();
+                    }
+                }
+
+                function getTextNodes(rootElement) {
+                    const walker = document.createTreeWalker(rootElement, NodeFilter.SHOW_TEXT, null, false);
+                    const textNodes = [];
+                    let currentNode;
+                    while (currentNode = walker.nextNode()) {
+                        const isSearchableCell = currentNode.parentNode.closest('td.msg-cell, td.source-cell, td.level-cell, td.time-cell');
+                        if (currentNode.nodeValue.length > 0 && isSearchableCell) {
+                            textNodes.push(currentNode);
+                        }
+                    }
+
+                    return textNodes;
+                }
+
+                function runSearchRegex(query, fullText) {
+                    // Replace spaces with \s to handle all whitespace types (spaces, &nbsp;, etc.)
+                    const finalPattern = query.replace(/ /g, '\\s');
+                    const regex = new RegExp(finalPattern, 'gi');
+
+                    let match;
+                    const matches = [];
+                    while ((match = regex.exec(fullText)) !== null) {
+                        if (match[0].length === 0) continue;
+                        matches.push({
+                            start: match.index,
+                            end: match.index + match[0].length,
+                        });
+                    }
+
+                    return matches;
+                }
+
+                function searchLogs() {
+                    clearSearchState();
+                    const searchInput = document.getElementById('search-input');
+                    const query = searchInput.value;
+
+                    if (query.length > 0) {
+                        document.getElementById('clear-search-btn').style.visibility = 'visible';
+                    } else {
+                        document.getElementById('clear-search-btn').style.visibility = 'hidden';
+                    }
+
+                    if (query.length < 2) {
+                        updateSearchCounter();
+                        return;
+                    }
+
+                    try {
+                        const logContainer = document.querySelector('.log-container');
+                        const textNodes = getTextNodes(logContainer);
+                        const fullText = textNodes.map(node => node.nodeValue).join('');
+                        const matches = runSearchRegex(query, fullText);
+
+                        searchResults = highlightMatches(matches, textNodes);
+
+                        if (searchResults.length > 0) {
+                            currentResultIndex = 0;
+                            scrollToResult(searchResults[0]);
+                        }
+                        updateSearchCounter();
+                    }
+                    catch (e) {
+                        console.error("Search Error:", e);
+                        searchInput.classList.add('search-error');
+                    } finally {
+                        updateSearchCounter();
+                    }
+                }
+
+              function clearSearchText() {
+                    const searchInput = document.getElementById('search-input');
+                    const clearButton = document.getElementById('clear-search-btn');
+                    searchInput.value = '';
+                    clearButton.style.display = 'none';
+                    clearSearchState();
+                    updateSearchCounter();
+                    searchInput.focus();
+                }
+
+                function clearSearchState() {
+                    document.getElementById('search-input').classList.remove('search-error');
+                    searchResults = [];
+                    currentResultIndex = -1;
+                    const logContainer = document.querySelector('.log-container');
+                    removeHighlights(logContainer);
+                }
+
+                function highlightMatches(matches, textNodes) {
+                    let textOffset = 0;
+                    const nodePositions = textNodes.map(node => {
+                        const start = textOffset;
+                        textOffset += node.nodeValue.length;
+                        return { node, start, end: textOffset };
+                    });
+
+                    // Process matches in reverse to avoid DOM modification issues
+                    for (let i = matches.length - 1; i >= 0; i--) {
+                        const currentMatch = matches[i];
+                        const affectedNodes = nodePositions.filter(pos =>
+                            pos.start < currentMatch.end && pos.end > currentMatch.start
+                        );
+
+                        const matchFragments = [];
+
+                        affectedNodes.forEach((pos, index) => {
+                            const node = pos.node;
+                            const parent = node.parentNode;
+                            const highlightStart = Math.max(0, currentMatch.start - pos.start);
+                            const highlightEnd = Math.min(node.nodeValue.length, currentMatch.end - pos.start);
+
+                            if (highlightStart >= highlightEnd) return;
+
+                            const middlePart = node.splitText(highlightStart);
+                            middlePart.splitText(highlightEnd - highlightStart);
+
+                            const highlight = document.createElement('span');
+                            highlight.className = 'highlight';
+                            highlight.dataset.matchId = i; // Group fragments of the same match
+                            highlight.appendChild(middlePart.cloneNode(true));
+                            parent.replaceChild(highlight, middlePart);
+
+                            if (index === 0) {
+                                highlight.classList.add('highlight-start');
+                            }
+                            if (index === affectedNodes.length - 1) {
+                                highlight.classList.add('highlight-end');
+                            }
+                            matchFragments.unshift(highlight);
+                        });
+
+                        if (matchFragments.length > 0) {
+                            searchResults.unshift(matchFragments[0]);
+                        }
+                    }
+                    return searchResults;
+                }
+
+                function updateSearchCounter() {
+                    const counter = document.getElementById('search-counter');
+                    if (searchResults.length > 0) {
+                        counter.textContent = `${currentResultIndex + 1} / ${searchResults.length}`;
+                    } else if (document.getElementById('search-input').value.length >= 2) {
+                        counter.textContent = `0 / 0`;
+                    } else {
+                        counter.textContent = '';
+                    }
+                }
+
+                function expandParents(element) {
+                    let current = element;
+                    while (current && current !== document.body) {
+                        if (current.classList.contains('nested-block') && current.style.display === 'none') {
+                            const header = document.getElementById('header_' + current.id);
+                            if (header) {
+                                const toggleButton = header.querySelector('.toggle-cell');
+                                if (toggleButton) {
+                                    toggle(current.id);
+                                }
+                            }
+                        }
+                        current = current.parentElement;
+                    }
+                }
+
+                function removeActiveHighlights() {
+                    const previouslyActive = document.querySelectorAll('.highlight.active');
+                    previouslyActive.forEach(el => el.classList.remove('active'));
+                }
+
+                function scrollToResult(element) {
+                    expandParents(element);
+                    removeActiveHighlights();
+
+                    const matchId = element.dataset.matchId;
+                    if (matchId) {
+                        const allFragmentsForMatch = document.querySelectorAll(`.highlight[data-match-id='${matchId}']`);
+                        allFragmentsForMatch.forEach(el => el.classList.add('active'));
+                    }
+
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    updateSearchCounter();
+                }
+
+                function nextResult() {
+                    if (searchResults.length > 0) {
+                        currentResultIndex = (currentResultIndex + 1) % searchResults.length;
+                        scrollToResult(searchResults[currentResultIndex]);
+                    }
+                }
+
+                function prevResult() {
+                    if (searchResults.length > 0) {
+                        currentResultIndex = (currentResultIndex - 1 + searchResults.length) % searchResults.length;
+                        scrollToResult(searchResults[currentResultIndex]);
+                    }
+                }
+
+                function toggle(id) {
+                    const e = document.getElementById(id);
+                    const t = document.getElementById('toggle-' + id);
+                    if (e.style.display === 'none') {
+                        e.style.display = 'table-row';
+                        e.setAttribute('aria-expanded', 'true');
+                        // endash for width consistency
+                        t.textContent = '[–]';
+                    } else {
+                        e.style.display = 'none';
+                        e.setAttribute('aria-expanded', 'false');
+                        t.textContent = '[+]';
+                    }
+                }
+
+                function formatDuration(ms) {
+                    if (ms < 1000) {
+                        return `${Math.round(ms)} ms`;
+                    }
+                    const seconds = ms / 1000;
+                    if (seconds < 60) {
+                        return `${seconds.toFixed(1)} s`;
+                    }
+                    const minutes = seconds / 60;
+                    if (minutes < 60) {
+                        return `${minutes.toFixed(1)} m`;
+                    }
+                    const hours = minutes / 60;
+                    return `${hours.toFixed(1)} h`;
+                }
+
+                function finalizeSpan(blockId, durationId, durationMs) {
+                    const durationCell = document.getElementById(durationId);
+                    if (durationCell) {
+                        durationCell.textContent = formatDuration(durationMs);
+                    }
+
+                    const contentRow = document.getElementById(blockId);
+                    if (!contentRow) return;
+
+                    const innerTable = contentRow.querySelector('table.log-table');
+                    if (innerTable && innerTable.rows.length === 0) {
+                        const headerRow = contentRow.previousElementSibling;
+                        if (headerRow) {
+                            const toggleCell = headerRow.querySelector('.toggle-cell');
+                            if (toggleCell) {
+                                toggleCell.style.visibility = 'hidden';
+                                toggleCell.style.cursor = 'default';
+                            }
+                        }
+                    }
+                }
+
+                function setSpanSeverity(blockId, cssClass) {
+                    const headerRow = document.getElementById('header_' + blockId);
+                    if (!headerRow) return;
+                    const classesToRemove = Array.from(headerRow.classList).filter(c => c.startsWith('log-level-'));
+                    for (const c of classesToRemove) {
+                        headerRow.classList.remove(c);
+                    }
+                    headerRow.classList.add(cssClass);
+                }
+        </script>
+        </head>
+        <body>
+            <div class="report-header">
+                <div class="header-main">
+                    <h1>test_full_pizza_order_workflow</h1>
+                    <p class="description">Tests the full workflow from ordering a pizza to delivery,
+showcasing all major pytest-human features.</p>
+
+                </div>
+                <div class="search-container">
+                    <svg class="search-icon" viewBox="0 0 512 512">
+                        <path d="M221.09 64a157.09 157.09 0 10157.09 157.09A157.1 157.1 0 00221.09 64z"
+                          fill="none" stroke="currentColor" stroke-miterlimit="10" stroke-width="32"/>
+                        <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10"
+                          stroke-width="32" d="M338.29 338.29L448 448"/>
+                    </svg>
+                    <input type="text" id="search-input"
+                           placeholder="Press / to search (regex)"
+                           oninput="searchLogs()"
+                           onfocus="this.select()">
+                    <button id="clear-search-btn" onclick="clearSearchText()" title="Clear search">
+                        <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+                           <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"></path>
+                        </svg>
+                    </button>
+                    <span id="search-counter">0 / 0</span>
+                    <div class="search-controls">
+                        <button onclick="prevResult()" title="Previous result" id="search-prev">
+                            <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+                                <path d="M3.22 10.72a.75.75 0 0 0 1.06 0L8 7.06l3.72 3.66a.75.75 0 1 0 1.06-1.06l-4.25-4.15a.75.75 0 0 0-1.06 0L3.22 9.66a.75.75 0 0 0 0 1.06Z">
+                                </path>
+                            </svg>
+                        </button>
+                        <button onclick="nextResult()" title="Next result" id="search-next">
+                            <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+                                <path d="M12.78 5.28a.75.75 0 0 0-1.06 0L8 8.94l-3.72-3.66a.75.75 0 0 0-1.06 1.06l4.25 4.15a.75.75 0 0 0 1.06 0l4.25-4.15a.75.75 0 0 0 0-1.06Z">
+                                </path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="log-container">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr id="header_block_1" class="log-level-info">
+            <td class="toggle-cell" onclick="toggle('block_1')">
+                <button id="toggle-block_1">[+]</button>
+            </td>
+            <td class="time-cell">11:11:56.958</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell" title="test_full_pizza_order_workflow">test_full_pizza_order_workflow</td>
+            <td class="msg-cell">Test setup</td>
+            <td class="duration-cell" id="duration_1">...</td>
+        </tr>
+        <tr id="block_1" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr id="header_block_2" class="log-level-debug">
+            <td class="toggle-cell" onclick="toggle('block_2')">
+                <button id="toggle-block_2">[+]</button>
+            </td>
+            <td class="time-cell">11:11:56.958</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell" title="event_loop_policy">event_loop_policy</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">event_loop_policy</span><span class="p">()</span>
+</td>
+            <td class="duration-cell" id="duration_2">...</td>
+        </tr>
+        <tr id="block_2" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:56.959</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">event_loop_policy</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">event_loop_policy</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="o">&lt;</span><span class="n">asyncio</span><span class="o">.</span><span class="n">unix_events</span><span class="o">.</span><span class="n">_UnixDefaultEventLoopPolicy</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x106a897b0</span><span class="o">&gt;</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_2', 'duration_2', 0.6529999664053321);</script><script>setSpanSeverity('block_2', 'log-level-debug');</script>
+        <tr id="header_block_3" class="log-level-debug">
+            <td class="toggle-cell" onclick="toggle('block_3')">
+                <button id="toggle-block_3">[+]</button>
+            </td>
+            <td class="time-cell">11:11:56.959</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell" title="base_url">base_url</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">base_url</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+</td>
+            <td class="duration-cell" id="duration_3">...</td>
+        </tr>
+        <tr id="block_3" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:56.959</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">base_url</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">base_url</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s1">&#39;&#39;</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_3', 'duration_3', 0.3154169535264373);</script><script>setSpanSeverity('block_3', 'log-level-debug');</script>
+        <tr id="header_block_4" class="log-level-debug">
+            <td class="toggle-cell" onclick="toggle('block_4')">
+                <button id="toggle-block_4">[+]</button>
+            </td>
+            <td class="time-cell">11:11:56.959</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell" title="_verify_url">_verify_url</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">_verify_url</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+</td>
+            <td class="duration-cell" id="duration_4">...</td>
+        </tr>
+        <tr id="block_4" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:56.960</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">_verify_url</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">_verify_url</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_4', 'duration_4', 0.32533297780901194);</script><script>setSpanSeverity('block_4', 'log-level-debug');</script>
+        <tr id="header_block_5" class="log-level-debug">
+            <td class="toggle-cell" onclick="toggle('block_5')">
+                <button id="toggle-block_5">[+]</button>
+            </td>
+            <td class="time-cell">11:11:56.960</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell" title="pytestconfig">pytestconfig</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">pytestconfig</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+</td>
+            <td class="duration-cell" id="duration_5">...</td>
+        </tr>
+        <tr id="block_5" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:56.960</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">pytestconfig</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">pytestconfig</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="o">&lt;</span><span class="n">_pytest</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">Config</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x10699f9d0</span><span class="o">&gt;</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_5', 'duration_5', 0.4641660489141941);</script><script>setSpanSeverity('block_5', 'log-level-debug');</script>
+        <tr id="header_block_6" class="log-level-debug">
+            <td class="toggle-cell" onclick="toggle('block_6')">
+                <button id="toggle-block_6">[+]</button>
+            </td>
+            <td class="time-cell">11:11:56.960</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell" title="delete_output_dir">delete_output_dir</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">delete_output_dir</span><span class="p">(</span><span class="n">pytestconfig</span><span class="o">=&lt;</span><span class="n">_pytest</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">Config</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x10699f9d0</span><span class="o">&gt;</span><span class="p">)</span>
+</td>
+            <td class="duration-cell" id="duration_6">...</td>
+        </tr>
+        <tr id="block_6" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:56.961</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">delete_output_dir</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">delete_output_dir</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_6', 'duration_6', 0.38254191167652607);</script><script>setSpanSeverity('block_6', 'log-level-debug');</script>
+        <tr id="header_block_7" class="log-level-debug">
+            <td class="toggle-cell" onclick="toggle('block_7')">
+                <button id="toggle-block_7">[+]</button>
+            </td>
+            <td class="time-cell">11:11:56.961</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell" title="tmp_path_factory">tmp_path_factory</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">tmp_path_factory</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+</td>
+            <td class="duration-cell" id="duration_7">...</td>
+        </tr>
+        <tr id="block_7" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:56.961</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">tmp_path_factory</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">tmp_path_factory</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">TempPathFactory</span><span class="p">(</span>
+    <span class="n">_given_basetemp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">_trace</span><span class="o">=&lt;</span><span class="n">pluggy</span><span class="o">.</span><span class="n">_tracing</span><span class="o">.</span><span class="n">TagTracerSub</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x107451510</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="n">_basetemp</span><span class="o">=</span><span class="n">PosixPath</span><span class="p">(</span><span class="s1">&#39;/private/var/folders/vh/2xf8thqd3572vjfgnnzvx1_m0000gn/T/pytest-of-user.name/pytest-470&#39;</span><span class="p">),</span>
+    <span class="n">_retention_count</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">_retention_policy</span><span class="o">=</span><span class="s1">&#39;all&#39;</span>
+<span class="p">)</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_7', 'duration_7', 0.6433749804273248);</script><script>setSpanSeverity('block_7', 'log-level-debug');</script>
+        <tr id="header_block_8" class="log-level-debug">
+            <td class="toggle-cell" onclick="toggle('block_8')">
+                <button id="toggle-block_8">[+]</button>
+            </td>
+            <td class="time-cell">11:11:56.962</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell" title="human">human</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">human</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+</td>
+            <td class="duration-cell" id="duration_8">...</td>
+        </tr>
+        <tr id="block_8" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:56.962</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">human</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">human</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="o">&lt;</span><span class="n">pytest_human</span><span class="o">.</span><span class="n">human</span><span class="o">.</span><span class="n">Human</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x1075509a0</span><span class="o">&gt;</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_8', 'duration_8', 0.37037499714642763);</script><script>setSpanSeverity('block_8', 'log-level-debug');</script>
+        <tr id="header_block_9" class="log-level-debug">
+            <td class="toggle-cell" onclick="toggle('block_9')">
+                <button id="toggle-block_9">[+]</button>
+            </td>
+            <td class="time-cell">11:11:56.962</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell" title="_extract_human_object">_extract_human_object</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">_extract_human_object</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">human</span><span class="o">=&lt;</span><span class="n">pytest_human</span><span class="o">.</span><span class="n">human</span><span class="o">.</span><span class="n">Human</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x1075509a0</span><span class="o">&gt;</span><span class="p">)</span>
+</td>
+            <td class="duration-cell" id="duration_9">...</td>
+        </tr>
+        <tr id="block_9" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:56.962</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">_extract_human_object</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">_extract_human_object</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_9', 'duration_9', 0.4587500588968396);</script><script>setSpanSeverity('block_9', 'log-level-debug');</script>
+        <tr id="header_block_10" class="log-level-debug">
+            <td class="toggle-cell" onclick="toggle('block_10')">
+                <button id="toggle-block_10">[+]</button>
+            </td>
+            <td class="time-cell">11:11:56.963</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell" title="tmp_path">tmp_path</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">tmp_path</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">tmp_path_factory</span><span class="o">=</span><span class="n">TempPathFactory</span><span class="p">(</span>
+    <span class="n">_given_basetemp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">_trace</span><span class="o">=&lt;</span><span class="n">pluggy</span><span class="o">.</span><span class="n">_tracing</span><span class="o">.</span><span class="n">TagTracerSub</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x107451510</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="n">_basetemp</span><span class="o">=</span><span class="n">PosixPath</span><span class="p">(</span><span class="s1">&#39;/private/var/folders/vh/2xf8thqd3572vjfgnnzvx1_m0000gn/T/pytest-of-user.name/pytest-470&#39;</span><span class="p">),</span>
+    <span class="n">_retention_count</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">_retention_policy</span><span class="o">=</span><span class="s1">&#39;all&#39;</span>
+<span class="p">))</span>
+</td>
+            <td class="duration-cell" id="duration_10">...</td>
+        </tr>
+        <tr id="block_10" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:56.964</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">tmp_path</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">tmp_path</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">PosixPath</span><span class="p">(</span><span class="s1">&#39;/private/var/folders/vh/2xf8thqd3572vjfgnnzvx1_m0000gn/T/pytest-of-user.name/pytest-470/test_full_pizza_order_workflow0&#39;</span><span class="p">)</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_10', 'duration_10', 1.37645797803998);</script><script>setSpanSeverity('block_10', 'log-level-debug');</script>
+        <tr id="header_block_11" class="log-level-debug">
+            <td class="toggle-cell" onclick="toggle('block_11')">
+                <button id="toggle-block_11">[+]</button>
+            </td>
+            <td class="time-cell">11:11:56.964</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell" title="_relocate_test_log">_relocate_test_log</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">_relocate_test_log</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">tmp_path</span><span class="o">=</span><span class="n">PosixPath</span><span class="p">(</span><span class="s1">&#39;/private/var/folders/vh/2xf8thqd3572vjfgnnzvx1_m0000gn/T/pytest-of-user.name/pytest-470/test_full_pizza_order_workflow0&#39;</span><span class="p">))</span>
+</td>
+            <td class="duration-cell" id="duration_11">...</td>
+        </tr>
+        <tr id="block_11" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:56.964</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">_relocate_test_log</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">_relocate_test_log</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_11', 'duration_11', 0.34804095048457384);</script><script>setSpanSeverity('block_11', 'log-level-debug');</script>
+        <tr id="header_block_12" class="log-level-debug">
+            <td class="toggle-cell" onclick="toggle('block_12')">
+                <button id="toggle-block_12">[+]</button>
+            </td>
+            <td class="time-cell">11:11:56.965</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell" title="log_3rdparty_methods">log_3rdparty_methods</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">log_3rdparty_methods</span><span class="p">()</span>
+</td>
+            <td class="duration-cell" id="duration_12">...</td>
+        </tr>
+        <tr id="block_12" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-warning">
+            <td></td>
+            <td class="time-cell">11:11:56.966</td>
+            <td class="level-cell">WARNING</td>
+            <td class="source-cell">root</td>
+            <td class="msg-cell">Target Page.screenshot is already patched for logging.</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:56.966</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">log_3rdparty_methods</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">log_3rdparty_methods</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_12', 'duration_12', 2.0182919688522816);</script><script>setSpanSeverity('block_12', 'log-level-debug');</script>
+        <tr id="header_block_13" class="log-level-debug">
+            <td class="toggle-cell" onclick="toggle('block_13')">
+                <button id="toggle-block_13">[+]</button>
+            </td>
+            <td class="time-cell">11:11:56.967</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell" title="trace_delivery_service">trace_delivery_service</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">trace_delivery_service</span><span class="p">()</span>
+</td>
+            <td class="duration-cell" id="duration_13">...</td>
+        </tr>
+        <tr id="block_13" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:56.967</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">trace_delivery_service</td>
+            <td class="msg-cell"><span class="n">setup</span> <span class="n">fixture</span> <span class="n">trace_delivery_service</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_13', 'duration_13', 0.38945802953094244);</script><script>setSpanSeverity('block_13', 'log-level-debug');</script></table></td></tr><script>finalizeSpan('block_1', 'duration_1', 9.654082939960063);</script><script>setSpanSeverity('block_1', 'log-level-info');</script>
+        <tr class="log-level-info">
+            <td></td>
+            <td class="time-cell">11:11:56.968</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell">test_full_pizza_order_workflow</td>
+            <td class="msg-cell">Starting new pizza order: &#x27;The Works&#x27;</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:56.968</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">test_full_pizza_order_workflow</td>
+            <td class="msg-cell"><span class="n">Order</span> <span class="n">details</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;customer&#39;</span><span class="p">:</span> <span class="s1">&#39;Jane Doe&#39;</span><span class="p">,</span> <span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="s1">&#39;large&#39;</span><span class="p">,</span> <span class="s1">&#39;toppings&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;pepperoni&#39;</span><span class="p">,</span> <span class="s1">&#39;mushrooms&#39;</span><span class="p">,</span> <span class="s1">&#39;onions&#39;</span><span class="p">],</span> <span class="s1">&#39;address&#39;</span><span class="p">:</span> <span class="s1">&#39;123 Main St&#39;</span><span class="p">}</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr id="header_block_14" class="log-level-info">
+            <td class="toggle-cell" onclick="toggle('block_14')">
+                <button id="toggle-block_14">[+]</button>
+            </td>
+            <td class="time-cell">11:11:56.968</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell" title="test_full_pizza_order_workflow">test_full_pizza_order_workflow</td>
+            <td class="msg-cell">Phase 1: 👨‍🍳 Preparing Pizza</td>
+            <td class="duration-cell" id="duration_14">...</td>
+        </tr>
+        <tr id="block_14" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr id="header_block_15" class="log-level-info">
+            <td class="toggle-cell" onclick="toggle('block_15')">
+                <button id="toggle-block_15">[+]</button>
+            </td>
+            <td class="time-cell">11:11:56.968</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell" title="tests.examples.test_pizza">tests.examples.test_pizza</td>
+            <td class="msg-cell"><span class="n">test_pizza</span><span class="o">.</span><span class="n">prepare_dough</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="s1">&#39;large&#39;</span><span class="p">)</span>
+</td>
+            <td class="duration-cell" id="duration_15">...</td>
+        </tr>
+        <tr id="block_15" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-info">
+            <td></td>
+            <td class="time-cell">11:11:56.969</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell">tests.examples.test_pizza</td>
+            <td class="msg-cell">Kneading large dough ball.</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.024</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">tests.examples.test_pizza</td>
+            <td class="msg-cell">Dough is ready.</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.024</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">tests.examples.test_pizza</td>
+            <td class="msg-cell"><span class="n">test_pizza</span><span class="o">.</span><span class="n">prepare_dough</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="s1">&#39;large&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;large_dough&#39;</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_15', 'duration_15', 55.62070803716779);</script><script>setSpanSeverity('block_15', 'log-level-info');</script>
+        <tr id="header_block_16" class="log-level-debug">
+            <td class="toggle-cell" onclick="toggle('block_16')">
+                <button id="toggle-block_16">[+]</button>
+            </td>
+            <td class="time-cell">11:11:57.024</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell" title="tests.examples.test_pizza">tests.examples.test_pizza</td>
+            <td class="msg-cell"><span class="n">test_pizza</span><span class="o">.</span><span class="n">add_sauce_and_cheese</span><span class="p">(</span><span class="n">dough</span><span class="o">=</span><span class="s1">&#39;large_dough&#39;</span><span class="p">,</span> <span class="n">sauce</span><span class="o">=</span><span class="s1">&#39;tomato&#39;</span><span class="p">,</span> <span class="n">cheese</span><span class="o">=</span><span class="s1">&#39;mozzarella&#39;</span><span class="p">)</span>
+</td>
+            <td class="duration-cell" id="duration_16">...</td>
+        </tr>
+        <tr id="block_16" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-info">
+            <td></td>
+            <td class="time-cell">11:11:57.024</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell">tests.examples.test_pizza</td>
+            <td class="msg-cell">Adding tomato sauce and mozzarella cheese.</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.049</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">tests.examples.test_pizza</td>
+            <td class="msg-cell"><span class="n">test_pizza</span><span class="o">.</span><span class="n">add_sauce_and_cheese</span><span class="p">(</span><span class="n">dough</span><span class="o">=</span><span class="s1">&#39;large_dough&#39;</span><span class="p">,</span> <span class="n">sauce</span><span class="o">=</span><span class="s1">&#39;tomato&#39;</span><span class="p">,</span> <span class="n">cheese</span><span class="o">=</span><span class="s1">&#39;mozzarella&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;large_dough_with_tomato_and_mozzarella&#39;</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_16', 'duration_16', 25.591166107915342);</script><script>setSpanSeverity('block_16', 'log-level-debug');</script>
+        <tr id="header_block_17" class="log-level-debug">
+            <td class="toggle-cell" onclick="toggle('block_17')">
+                <button id="toggle-block_17">[+]</button>
+            </td>
+            <td class="time-cell">11:11:57.050</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell" title="test_full_pizza_order_workflow">test_full_pizza_order_workflow</td>
+            <td class="msg-cell">Adding toppings</td>
+            <td class="duration-cell" id="duration_17">...</td>
+        </tr>
+        <tr id="block_17" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr id="header_block_18" class="log-level-info">
+            <td class="toggle-cell" onclick="toggle('block_18')">
+                <button id="toggle-block_18">[+]</button>
+            </td>
+            <td class="time-cell">11:11:57.050</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell" title="tests.examples.test_pizza">tests.examples.test_pizza</td>
+            <td class="msg-cell"><span class="n">test_pizza</span><span class="o">.</span><span class="n">add_toppings</span><span class="p">(</span><span class="n">pizza_base</span><span class="o">=</span><span class="s1">&#39;large_dough_with_tomato_and_mozzarella&#39;</span><span class="p">,</span> <span class="n">toppings</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;pepperoni&#39;</span><span class="p">,</span> <span class="s1">&#39;mushrooms&#39;</span><span class="p">,</span> <span class="s1">&#39;onions&#39;</span><span class="p">])</span>
+</td>
+            <td class="duration-cell" id="duration_18">...</td>
+        </tr>
+        <tr id="block_18" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-info">
+            <td></td>
+            <td class="time-cell">11:11:57.050</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell">tests.examples.test_pizza</td>
+            <td class="msg-cell">Adding 3 toppings...</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-trace">
+            <td></td>
+            <td class="time-cell">11:11:57.050</td>
+            <td class="level-cell">TRACE</td>
+            <td class="source-cell">tests.examples.test_pizza</td>
+            <td class="msg-cell">Adding pepperoni</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-trace">
+            <td></td>
+            <td class="time-cell">11:11:57.050</td>
+            <td class="level-cell">TRACE</td>
+            <td class="source-cell">tests.examples.test_pizza</td>
+            <td class="msg-cell">Adding mushrooms</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-trace">
+            <td></td>
+            <td class="time-cell">11:11:57.050</td>
+            <td class="level-cell">TRACE</td>
+            <td class="source-cell">tests.examples.test_pizza</td>
+            <td class="msg-cell">Adding onions</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.050</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">tests.examples.test_pizza</td>
+            <td class="msg-cell"><span class="n">test_pizza</span><span class="o">.</span><span class="n">add_toppings</span><span class="p">(</span><span class="n">pizza_base</span><span class="o">=</span><span class="s1">&#39;large_dough_with_tomato_and_mozzarella&#39;</span><span class="p">,</span> <span class="n">toppings</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;pepperoni&#39;</span><span class="p">,</span> <span class="s1">&#39;mushrooms&#39;</span><span class="p">,</span> <span class="s1">&#39;onions&#39;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="o">&lt;</span><span class="n">suppressed</span><span class="o">&gt;</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_18', 'duration_18', 0.5736671155318618);</script><script>setSpanSeverity('block_18', 'log-level-info');</script></table></td></tr><script>finalizeSpan('block_17', 'duration_17', 0.6932920077815652);</script><script>setSpanSeverity('block_17', 'log-level-debug');</script>
+        <tr class="log-level-info">
+            <td></td>
+            <td class="time-cell">11:11:57.051</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell">test_full_pizza_order_workflow</td>
+            <td class="msg-cell">Preparation complete. Ready for oven.</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_14', 'duration_14', 82.235167035833);</script><script>setSpanSeverity('block_14', 'log-level-info');</script>
+        <tr id="header_block_19" class="log-level-info">
+            <td class="toggle-cell" onclick="toggle('block_19')">
+                <button id="toggle-block_19">[+]</button>
+            </td>
+            <td class="time-cell">11:11:57.051</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell" title="test_full_pizza_order_workflow">test_full_pizza_order_workflow</td>
+            <td class="msg-cell">Phase 2: 🔥 Baking Pizza</td>
+            <td class="duration-cell" id="duration_19">...</td>
+        </tr>
+        <tr id="block_19" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr id="header_block_20" class="log-level-info">
+            <td class="toggle-cell" onclick="toggle('block_20')">
+                <button id="toggle-block_20">[+]</button>
+            </td>
+            <td class="time-cell">11:11:57.051</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell" title="tests.examples.test_pizza">tests.examples.test_pizza</td>
+            <td class="msg-cell"><span class="n">test_pizza</span><span class="o">.</span><span class="n">bake_pizza</span><span class="p">(</span><span class="n">pizza_details</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;base&#39;</span><span class="p">:</span> <span class="s1">&#39;large_dough_with_tomato_and_mozzarella&#39;</span><span class="p">,</span> <span class="s1">&#39;toppings&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;pepperoni&#39;</span><span class="p">,</span> <span class="s1">&#39;mushrooms&#39;</span><span class="p">,</span> <span class="s1">&#39;onions&#39;</span><span class="p">],</span> <span class="s1">&#39;preparation_time&#39;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">})</span>
+</td>
+            <td class="duration-cell" id="duration_20">...</td>
+        </tr>
+        <tr id="block_20" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-info">
+            <td></td>
+            <td class="time-cell">11:11:57.051</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell">kitchen.oven</td>
+            <td class="msg-cell">Oven preheated. Baking pizza with [&#x27;pepperoni&#x27;, &#x27;mushrooms&#x27;, &#x27;onions&#x27;]</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-warning">
+            <td></td>
+            <td class="time-cell">11:11:57.156</td>
+            <td class="level-cell">WARNING</td>
+            <td class="source-cell">kitchen.oven</td>
+            <td class="msg-cell">Onions topping running low, substituting with olives.</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.156</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">tests.examples.test_pizza</td>
+            <td class="msg-cell"><span class="n">test_pizza</span><span class="o">.</span><span class="n">bake_pizza</span><span class="p">(</span><span class="n">pizza_details</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;base&#39;</span><span class="p">:</span> <span class="s1">&#39;large_dough_with_tomato_and_mozzarella&#39;</span><span class="p">,</span> <span class="s1">&#39;toppings&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;pepperoni&#39;</span><span class="p">,</span> <span class="s1">&#39;mushrooms&#39;</span><span class="p">,</span> <span class="s1">&#39;onions&#39;</span><span class="p">],</span> <span class="s1">&#39;preparation_time&#39;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="s1">&#39;baked_pizza_with_pepperoni_mushrooms_olives&#39;</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_20', 'duration_20', 105.81325006205589);</script><script>setSpanSeverity('block_20', 'log-level-info');</script></table></td></tr><script>finalizeSpan('block_19', 'duration_19', 105.98491702694446);</script><script>setSpanSeverity('block_19', 'log-level-info');</script>
+        <tr id="header_block_21" class="log-level-info">
+            <td class="toggle-cell" onclick="toggle('block_21')">
+                <button id="toggle-block_21">[+]</button>
+            </td>
+            <td class="time-cell">11:11:57.157</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell" title="test_full_pizza_order_workflow">test_full_pizza_order_workflow</td>
+            <td class="msg-cell">Phase 3: 🚚 Delivery</td>
+            <td class="duration-cell" id="duration_21">...</td>
+        </tr>
+        <tr id="block_21" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.157</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">test_full_pizza_order_workflow</td>
+            <td class="msg-cell">Contacting delivery partner for 123 Main St</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-info">
+            <td></td>
+            <td class="time-cell">11:11:57.157</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell">ExternalDeliveryService</td>
+            <td class="msg-cell">Service initialized.</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr id="header_block_22" class="log-level-info">
+            <td class="toggle-cell" onclick="toggle('block_22')">
+                <button id="toggle-block_22">[+]</button>
+            </td>
+            <td class="time-cell">11:11:57.157</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell" title="tests.examples.external_delivery">tests.examples.external_delivery</td>
+            <td class="msg-cell"><span class="n">ExternalDeliveryService</span><span class="o">.</span><span class="n">dispatch_driver</span><span class="p">(</span><span class="n">priority</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</td>
+            <td class="duration-cell" id="duration_22">...</td>
+        </tr>
+        <tr id="block_22" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.157</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">ExternalDeliveryService</td>
+            <td class="msg-cell">Dispatching...</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.210</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">tests.examples.external_delivery</td>
+            <td class="msg-cell"><span class="n">ExternalDeliveryService</span><span class="o">.</span><span class="n">dispatch_driver</span><span class="p">(</span><span class="n">priority</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">{</span><span class="s1">&#39;driver_id&#39;</span><span class="p">:</span> <span class="s1">&#39;dave-007&#39;</span><span class="p">,</span> <span class="s1">&#39;eta_minutes&#39;</span><span class="p">:</span> <span class="mi">15</span><span class="p">}</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_22', 'duration_22', 53.60854207538068);</script><script>setSpanSeverity('block_22', 'log-level-info');</script>
+        <tr id="header_block_23" class="log-level-info">
+            <td class="toggle-cell" onclick="toggle('block_23')">
+                <button id="toggle-block_23">[+]</button>
+            </td>
+            <td class="time-cell">11:11:57.210</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell" title="tests.examples.external_delivery">tests.examples.external_delivery</td>
+            <td class="msg-cell"><span class="n">ExternalDeliveryService</span><span class="o">.</span><span class="n">get_delivery_status</span><span class="p">()</span>
+</td>
+            <td class="duration-cell" id="duration_23">...</td>
+        </tr>
+        <tr id="block_23" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.211</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">tests.examples.external_delivery</td>
+            <td class="msg-cell"><span class="n">ExternalDeliveryService</span><span class="o">.</span><span class="n">get_delivery_status</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s1">&#39;out_for_delivery&#39;</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_23', 'duration_23', 0.21545798517763615);</script><script>setSpanSeverity('block_23', 'log-level-info');</script>
+        <tr class="log-level-info">
+            <td></td>
+            <td class="time-cell">11:11:57.211</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell">test_full_pizza_order_workflow</td>
+            <td class="msg-cell"><span class="n">Dispatch</span> <span class="n">info</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;driver_id&#39;</span><span class="p">:</span> <span class="s1">&#39;dave-007&#39;</span><span class="p">,</span> <span class="s1">&#39;eta_minutes&#39;</span><span class="p">:</span> <span class="mi">15</span><span class="p">}</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-info">
+            <td></td>
+            <td class="time-cell">11:11:57.211</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell">test_full_pizza_order_workflow</td>
+            <td class="msg-cell">Verifying final order on pickup...</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr id="header_block_24" class="log-level-info">
+            <td class="toggle-cell" onclick="toggle('block_24')">
+                <button id="toggle-block_24">[+]</button>
+            </td>
+            <td class="time-cell">11:11:57.211</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell" title="tests.examples.test_pizza">tests.examples.test_pizza</td>
+            <td class="msg-cell"><span class="n">test_pizza</span><span class="o">.</span><span class="n">get_current_topping</span><span class="p">(</span><span class="n">pizza</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;base&#39;</span><span class="p">:</span> <span class="s1">&#39;large_dough_with_tomato_and_mozzarella&#39;</span><span class="p">,</span> <span class="s1">&#39;toppings&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;pepperoni&#39;</span><span class="p">,</span> <span class="s1">&#39;mushrooms&#39;</span><span class="p">,</span> <span class="s1">&#39;olives&#39;</span><span class="p">],</span> <span class="s1">&#39;preparation_time&#39;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">})</span>
+</td>
+            <td class="duration-cell" id="duration_24">...</td>
+        </tr>
+        <tr id="block_24" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-info">
+            <td></td>
+            <td class="time-cell">11:11:57.211</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell">tests.examples.test_pizza</td>
+            <td class="msg-cell">Getting current topping on the pizza</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.211</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">tests.examples.test_pizza</td>
+            <td class="msg-cell"><span class="n">test_pizza</span><span class="o">.</span><span class="n">get_current_topping</span><span class="p">(</span><span class="n">pizza</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;base&#39;</span><span class="p">:</span> <span class="s1">&#39;large_dough_with_tomato_and_mozzarella&#39;</span><span class="p">,</span> <span class="s1">&#39;toppings&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;pepperoni&#39;</span><span class="p">,</span> <span class="s1">&#39;mushrooms&#39;</span><span class="p">,</span> <span class="s1">&#39;olives&#39;</span><span class="p">],</span> <span class="s1">&#39;preparation_time&#39;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="p">[</span><span class="s1">&#39;pepperoni&#39;</span><span class="p">,</span> <span class="s1">&#39;mushrooms&#39;</span><span class="p">,</span> <span class="s1">&#39;olives&#39;</span><span class="p">]</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_24', 'duration_24', 0.6417909171432257);</script><script>setSpanSeverity('block_24', 'log-level-info');</script>
+        <tr class="log-level-error">
+            <td></td>
+            <td class="time-cell">11:11:57.212</td>
+            <td class="level-cell">ERROR</td>
+            <td class="source-cell">test_full_pizza_order_workflow</td>
+            <td class="msg-cell"><span class="k">assert</span> <span class="p">{</span><span class="s1">&#39;olives&#39;</span><span class="p">,</span> <span class="s1">&#39;pepperoni&#39;</span><span class="p">,</span> <span class="s1">&#39;mushrooms&#39;</span><span class="p">}</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;onions&#39;</span><span class="p">,</span> <span class="s1">&#39;pepperoni&#39;</span><span class="p">,</span> <span class="s1">&#39;mushrooms&#39;</span><span class="p">}</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_21', 'duration_21', 55.562291061505675);</script><script>setSpanSeverity('block_21', 'log-level-error');</script>
+        <tr id="header_block_25" class="log-level-error">
+            <td class="toggle-cell" onclick="toggle('block_25')">
+                <button id="toggle-block_25">[+]</button>
+            </td>
+            <td class="time-cell">11:11:57.231</td>
+            <td class="level-cell">ERROR</td>
+            <td class="source-cell" title="test_full_pizza_order_workflow">test_full_pizza_order_workflow</td>
+            <td class="msg-cell"><span class="ne">Exception</span><span class="p">:</span> <span class="ne">AssertionError</span> <span class="n">Toppings</span> <span class="n">mismatch</span> <span class="n">at</span> <span class="n">pickup</span><span class="err">!</span>
+<span class="k">assert</span> <span class="p">{</span><span class="s1">&#39;mushrooms&#39;</span><span class="p">,</span><span class="o">...</span><span class="p">,</span> <span class="s1">&#39;pepperoni&#39;</span><span class="p">}</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;mushrooms&#39;</span><span class="p">,</span><span class="o">...</span><span class="p">,</span> <span class="s1">&#39;pepperoni&#39;</span><span class="p">}</span>
+  
+  <span class="n">Extra</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">left</span> <span class="nb">set</span><span class="p">:</span>
+  <span class="s1">&#39;olives&#39;</span>
+  <span class="n">Extra</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">right</span> <span class="nb">set</span><span class="p">:</span>
+  <span class="s1">&#39;onions&#39;</span>
+  <span class="n">Use</span> <span class="o">-</span><span class="n">v</span> <span class="n">to</span> <span class="n">get</span> <span class="n">more</span> <span class="n">diff</span>
+</td>
+            <td class="duration-cell" id="duration_25">...</td>
+        </tr>
+        <tr id="block_25" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-error">
+            <td></td>
+            <td class="time-cell">11:11:57.232</td>
+            <td class="level-cell">ERROR</td>
+            <td class="source-cell">test_full_pizza_order_workflow</td>
+            <td class="msg-cell"><span class="n">traceback</span><span class="p">:</span> <span class="n">human</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">pytest_human</span><span class="o">.</span><span class="n">human</span><span class="o">.</span><span class="n">Human</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x1075509a0</span><span class="o">&gt;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_full_pizza_order_workflow</span><span class="p">(</span><span class="n">human</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Tests the full workflow from ordering a pizza to delivery,</span>
+<span class="sd">        showcasing all major pytest-human features.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">human</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting new pizza order: &#39;The Works&#39;&quot;</span><span class="p">)</span>
+        <span class="n">order_details</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;customer&quot;</span><span class="p">:</span> <span class="s2">&quot;Jane Doe&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="s2">&quot;large&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;toppings&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;pepperoni&quot;</span><span class="p">,</span> <span class="s2">&quot;mushrooms&quot;</span><span class="p">,</span> <span class="s2">&quot;onions&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;address&quot;</span><span class="p">:</span> <span class="s2">&quot;123 Main St&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="c1"># Use highlight=True to syntax highlight the order details</span>
+        <span class="n">human</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Order details: </span><span class="si">{</span><span class="n">order_details</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">highlight</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+        <span class="k">with</span> <span class="n">human</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">span</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Phase 1: 👨‍🍳 Preparing Pizza&quot;</span><span class="p">):</span>
+            <span class="n">dough</span> <span class="o">=</span> <span class="n">prepare_dough</span><span class="p">(</span><span class="n">order_details</span><span class="p">[</span><span class="s2">&quot;size&quot;</span><span class="p">])</span>
+            <span class="n">pizza_base</span> <span class="o">=</span> <span class="n">add_sauce_and_cheese</span><span class="p">(</span><span class="n">dough</span><span class="p">,</span> <span class="s2">&quot;tomato&quot;</span><span class="p">,</span> <span class="s2">&quot;mozzarella&quot;</span><span class="p">)</span>
+    
+            <span class="c1"># Simulate an internal kitchen log being added as an artifact</span>
+            <span class="n">kitchen_ticket</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;ORDER 123</span><span class="se">\n</span><span class="si">{</span><span class="n">order_details</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">order_details</span><span class="p">[</span><span class="s1">&#39;toppings&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">human</span><span class="o">.</span><span class="n">artifacts</span><span class="o">.</span><span class="n">add_log_text</span><span class="p">(</span><span class="n">kitchen_ticket</span><span class="p">,</span> <span class="s2">&quot;kitchen_ticket.log&quot;</span><span class="p">,</span> <span class="s2">&quot;Kitchen Printer Log&quot;</span><span class="p">)</span>
+    
+            <span class="k">with</span> <span class="n">human</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">span</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Adding toppings&quot;</span><span class="p">):</span>
+                <span class="n">pizza_in_progress</span> <span class="o">=</span> <span class="n">add_toppings</span><span class="p">(</span><span class="n">pizza_base</span><span class="p">,</span> <span class="n">order_details</span><span class="p">[</span><span class="s2">&quot;toppings&quot;</span><span class="p">])</span>
+    
+            <span class="n">human</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Preparation complete. Ready for oven.&quot;</span><span class="p">)</span>
+    
+        <span class="k">with</span> <span class="n">human</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">span</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Phase 2: 🔥 Baking Pizza&quot;</span><span class="p">):</span>
+            <span class="n">baked_pizza</span> <span class="o">=</span> <span class="n">bake_pizza</span><span class="p">(</span><span class="n">pizza_in_progress</span><span class="p">)</span>
+    
+            <span class="c1"># This print statement will be captured as stdout</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;KITCHEN_ALARM: Pizza </span><span class="si">{</span><span class="n">baked_pizza</span><span class="si">}</span><span class="s2"> is ready!&quot;</span><span class="p">)</span>
+    
+        <span class="k">with</span> <span class="n">human</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">span</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Phase 3: 🚚 Delivery&quot;</span><span class="p">):</span>
+            <span class="n">human</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Contacting delivery partner for </span><span class="si">{</span><span class="n">order_details</span><span class="p">[</span><span class="s1">&#39;address&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+            <span class="c1"># These methods will be automatically traced by our fixture</span>
+            <span class="n">service</span> <span class="o">=</span> <span class="n">ExternalDeliveryService</span><span class="p">(</span><span class="n">order_details</span><span class="p">[</span><span class="s2">&quot;address&quot;</span><span class="p">])</span>
+            <span class="n">dispatch_info</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="n">dispatch_driver</span><span class="p">(</span><span class="n">priority</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="n">get_delivery_status</span><span class="p">()</span>
+    
+            <span class="n">human</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dispatch info: </span><span class="si">{</span><span class="n">dispatch_info</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">highlight</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">human</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Verifying final order on pickup...&quot;</span><span class="p">)</span>
+            <span class="n">current_toppings</span> <span class="o">=</span> <span class="n">get_current_topping</span><span class="p">(</span><span class="n">pizza_in_progress</span><span class="p">)</span>
+            <span class="n">expected_toppings</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;pepperoni&quot;</span><span class="p">,</span> <span class="s2">&quot;mushrooms&quot;</span><span class="p">,</span> <span class="s2">&quot;onions&quot;</span><span class="p">]</span>
+<span class="o">&gt;</span>           <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">current_toppings</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">expected_toppings</span><span class="p">),</span> <span class="s2">&quot;Toppings mismatch at pickup!&quot;</span>
+<span class="n">E</span>           <span class="ne">AssertionError</span><span class="p">:</span> <span class="n">Toppings</span> <span class="n">mismatch</span> <span class="n">at</span> <span class="n">pickup</span><span class="err">!</span>
+<span class="n">E</span>           <span class="k">assert</span> <span class="p">{</span><span class="s1">&#39;mushrooms&#39;</span><span class="p">,</span><span class="o">...</span><span class="p">,</span> <span class="s1">&#39;pepperoni&#39;</span><span class="p">}</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;mushrooms&#39;</span><span class="p">,</span><span class="o">...</span><span class="p">,</span> <span class="s1">&#39;pepperoni&#39;</span><span class="p">}</span>
+<span class="n">E</span>             
+<span class="n">E</span>             <span class="n">Extra</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">left</span> <span class="nb">set</span><span class="p">:</span>
+<span class="n">E</span>             <span class="s1">&#39;olives&#39;</span>
+<span class="n">E</span>             <span class="n">Extra</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">right</span> <span class="nb">set</span><span class="p">:</span>
+<span class="n">E</span>             <span class="s1">&#39;onions&#39;</span>
+<span class="n">E</span>             <span class="n">Use</span> <span class="o">-</span><span class="n">v</span> <span class="n">to</span> <span class="n">get</span> <span class="n">more</span> <span class="n">diff</span>
+
+<span class="n">tests</span><span class="o">/</span><span class="n">examples</span><span class="o">/</span><span class="n">test_pizza</span><span class="o">.</span><span class="n">py</span><span class="p">:</span><span class="mi">119</span><span class="p">:</span> <span class="ne">AssertionError</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_25', 'duration_25', 3.593208035454154);</script><script>setSpanSeverity('block_25', 'log-level-error');</script>
+        <tr id="header_block_26" class="log-level-info">
+            <td class="toggle-cell" onclick="toggle('block_26')">
+                <button id="toggle-block_26">[+]</button>
+            </td>
+            <td class="time-cell">11:11:57.235</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell" title="test_full_pizza_order_workflow">test_full_pizza_order_workflow</td>
+            <td class="msg-cell">Test teardown</td>
+            <td class="duration-cell" id="duration_26">...</td>
+        </tr>
+        <tr id="block_26" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.235</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">trace_delivery_service</td>
+            <td class="msg-cell"><span class="n">Tore</span> <span class="n">down</span> <span class="n">fixture</span> <span class="n">trace_delivery_service</span><span class="p">()</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.236</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">log_3rdparty_methods</td>
+            <td class="msg-cell"><span class="n">Tore</span> <span class="n">down</span> <span class="n">fixture</span> <span class="n">log_3rdparty_methods</span><span class="p">()</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.236</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">_relocate_test_log</td>
+            <td class="msg-cell"><span class="n">Tore</span> <span class="n">down</span> <span class="n">fixture</span> <span class="n">_relocate_test_log</span><span class="p">()</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.236</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">tmp_path</td>
+            <td class="msg-cell"><span class="n">Tore</span> <span class="n">down</span> <span class="n">fixture</span> <span class="n">tmp_path</span><span class="p">()</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.236</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">_extract_human_object</td>
+            <td class="msg-cell"><span class="n">Tore</span> <span class="n">down</span> <span class="n">fixture</span> <span class="n">_extract_human_object</span><span class="p">()</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.236</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">human</td>
+            <td class="msg-cell"><span class="n">Tore</span> <span class="n">down</span> <span class="n">fixture</span> <span class="n">human</span><span class="p">()</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.236</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">tmp_path_factory</td>
+            <td class="msg-cell"><span class="n">Tore</span> <span class="n">down</span> <span class="n">fixture</span> <span class="n">tmp_path_factory</span><span class="p">()</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.237</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">delete_output_dir</td>
+            <td class="msg-cell"><span class="n">Tore</span> <span class="n">down</span> <span class="n">fixture</span> <span class="n">delete_output_dir</span><span class="p">()</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.237</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">pytestconfig</td>
+            <td class="msg-cell"><span class="n">Tore</span> <span class="n">down</span> <span class="n">fixture</span> <span class="n">pytestconfig</span><span class="p">()</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.237</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">_verify_url</td>
+            <td class="msg-cell"><span class="n">Tore</span> <span class="n">down</span> <span class="n">fixture</span> <span class="n">_verify_url</span><span class="p">()</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.237</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">base_url</td>
+            <td class="msg-cell"><span class="n">Tore</span> <span class="n">down</span> <span class="n">fixture</span> <span class="n">base_url</span><span class="p">()</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-debug">
+            <td></td>
+            <td class="time-cell">11:11:57.237</td>
+            <td class="level-cell">DEBUG</td>
+            <td class="source-cell">event_loop_policy</td>
+            <td class="msg-cell"><span class="n">Tore</span> <span class="n">down</span> <span class="n">fixture</span> <span class="n">event_loop_policy</span><span class="p">()</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_26', 'duration_26', 2.1230001002550125);</script><script>setSpanSeverity('block_26', 'log-level-info');</script>
+        <tr id="header_block_27" class="log-level-info">
+            <td class="toggle-cell" onclick="toggle('block_27')">
+                <button id="toggle-block_27">[+]</button>
+            </td>
+            <td class="time-cell">11:11:57.237</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell" title="test_full_pizza_order_workflow">test_full_pizza_order_workflow</td>
+            <td class="msg-cell">Test artifacts</td>
+            <td class="duration-cell" id="duration_27">...</td>
+        </tr>
+        <tr id="block_27" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr id="header_block_28" class="log-level-info">
+            <td class="toggle-cell" onclick="toggle('block_28')">
+                <button id="toggle-block_28">[+]</button>
+            </td>
+            <td class="time-cell">11:11:57.237</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell" title="test_full_pizza_order_workflow">test_full_pizza_order_workflow</td>
+            <td class="msg-cell">Captured stdout call</td>
+            <td class="duration-cell" id="duration_28">...</td>
+        </tr>
+        <tr id="block_28" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-info">
+            <td></td>
+            <td class="time-cell">11:11:57.237</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell">test_full_pizza_order_workflow</td>
+            <td class="msg-cell"><span class="n">KITCHEN_ALARM</span><span class="p">:</span> <span class="n">Pizza</span> <span class="n">baked_pizza_with_pepperoni_mushrooms_olives</span> <span class="ow">is</span> <span class="n">ready</span><span class="err">!</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_28', 'duration_28', 0.13816601131111383);</script><script>setSpanSeverity('block_28', 'log-level-info');</script>
+        <tr id="header_block_29" class="log-level-info">
+            <td class="toggle-cell" onclick="toggle('block_29')">
+                <button id="toggle-block_29">[+]</button>
+            </td>
+            <td class="time-cell">11:11:57.238</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell" title="test_full_pizza_order_workflow">test_full_pizza_order_workflow</td>
+            <td class="msg-cell">kitchen_ticket.log</td>
+            <td class="duration-cell" id="duration_29">...</td>
+        </tr>
+        <tr id="block_29" class="nested-block" aria-expanded="false" style="display: none;">
+            <td colspan="6" class ="nested-block-td">
+                <table class="log-table" role="treegrid">
+                    <colgroup>
+                        <col style="width: 3rem;">
+                        <col style="width: 10rem;">
+                        <col style="width: 7rem;">
+                        <col style="width: 14rem;">
+                        <col style="width: 100%;">
+                        <col style="width: 6rem;">
+                    </colgroup>
+        
+        <tr class="log-level-info">
+            <td></td>
+            <td class="time-cell">11:11:57.238</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell">test_full_pizza_order_workflow</td>
+            <td class="msg-cell"><span class="c1"># Kitchen Printer Log</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        
+        <tr class="log-level-info">
+            <td></td>
+            <td class="time-cell">11:11:57.238</td>
+            <td class="level-cell">INFO</td>
+            <td class="source-cell">test_full_pizza_order_workflow</td>
+            <td class="msg-cell"><span class="n">ORDER</span> <span class="mi">123</span>
+<span class="n">LARGE</span> <span class="o">-</span> <span class="p">[</span><span class="s1">&#39;pepperoni&#39;</span><span class="p">,</span> <span class="s1">&#39;mushrooms&#39;</span><span class="p">,</span> <span class="s1">&#39;onions&#39;</span><span class="p">]</span>
+</td>
+            <td class="duration-cell"></td>
+        </tr>
+        </table></td></tr><script>finalizeSpan('block_29', 'duration_29', 0.18966698553413153);</script><script>setSpanSeverity('block_29', 'log-level-info');</script></table></td></tr><script>finalizeSpan('block_27', 'duration_27', 0.40437502320855856);</script><script>setSpanSeverity('block_27', 'log-level-info');</script></table></div></body></html>

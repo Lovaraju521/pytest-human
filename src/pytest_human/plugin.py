@@ -345,11 +345,15 @@ class HtmlLogPlugin:
 
         report.item = item
 
+        logger = get_logger(item.name)
+
         # xfail exceptions do not show up in pytest_exception_interact
         if hasattr(report, "wasxfail") and call.excinfo is not None:
-            logger = get_logger(item.name)
             exctext = self._strip_ansi_codes(call.excinfo.exconly())
             logger.warning(f"XFAIL: {report.wasxfail}\n\n{exctext}", highlight=True)
+
+        if not hasattr(report, "wasxfail") and report.skipped:
+            logger.info(f"Test {item.name} was skipped.")
 
     def _log_artifacts(self, human: Human) -> None:
         for attachment in human.artifacts.logs():

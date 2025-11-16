@@ -29,7 +29,7 @@ Works with standard python logging, no need to rewrite existing tests to get goi
 
 https://github.com/user-attachments/assets/831b53ea-cf7f-468d-9303-335e444525e9
 
-[Example Report](assets/test_pizza.html)
+[Example Report](assets/test_pizza.html) and test [source file](tests/examples/test_pizza.py).
 
 ## Installation
 
@@ -184,12 +184,11 @@ def test_programmatic_logger():
 
 ### Collapsible Spans
 
-![Screenshot](assets/test_spans.png)
-
-
 Create nested, collapsible sections in your HTML logs.
 
 This allows partitioning the log into sections and diving only into the parts of the logs that are relevant to your debug session.
+
+![Screenshot](assets/test_spans.png)
 
 ```python
 def test_spans(human):
@@ -339,8 +338,6 @@ pytest --enable-html-log --log-level trace
 ```
 
 
-
-
 ### Keyboard navigation
 You can use the keyboard to navigate around the log.
 * Press <kbd>Tab</kbd> and <kbd>Shift</kbd>+<kbd>Tab</kbd> to jump between the expand buttons (+).
@@ -353,7 +350,7 @@ You can use the keyboard to navigate around the log.
 
 ```bash
 # Install development dependencies
-pip install -e ".[dev]"
+pip install --group dev -e .
 
 # Run tests
 pytest
@@ -373,6 +370,8 @@ tox
 ```bash
 mkdocs serve
 ```
+
+Documentation is still TBD
 
 
 ## License

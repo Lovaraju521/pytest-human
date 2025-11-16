@@ -244,12 +244,13 @@ def test_logging_log_fixtures_setup(pytester: pytest.Pytester, page: Page) -> No
 def test_logging_log_fixtures_setup_async(pytester: pytest.Pytester, page: Page) -> None:
     pytester.makepyfile("""
         import pytest
+        import pytest_asyncio
 
-        @pytest.fixture
+        @pytest_asyncio.fixture
         async def foobulator():
             return 3
 
-        @pytest.fixture
+        @pytest_asyncio.fixture
         async def sandwich(foobulator):
             return foobulator + 2
 
@@ -308,21 +309,25 @@ def test_logging_log_fixtures_teardown(pytester: pytest.Pytester, page: Page) ->
 def test_logging_log_fixtures_teardown_async(pytester: pytest.Pytester, page: Page) -> None:
     pytester.makepyfile("""
         import pytest
+        import pytest_asyncio
 
-        @pytest.fixture
+        @pytest_asyncio.fixture
         async def foobulator():
             return 3
 
-        @pytest.fixture()
+        @pytest_asyncio.fixture
         async def sandwich(foobulator):
             return foobulator + 2
 
         @pytest.mark.asyncio
-        def test_example(sandwich):
+        async def test_example(sandwich):
             assert True
     """)
 
-    result = pytester.runpytest_subprocess("--enable-html-log", "--log-level=debug")
+    result = pytester.runpytest_subprocess(
+        "--enable-html-log",
+        "--log-level=debug",
+    )
     html_path = utils.find_test_log_location(result)
     assert result.ret == 0
 

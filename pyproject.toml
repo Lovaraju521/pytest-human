@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pytest-human"
-description = "A robot-like nested HTML test report"
-version = "0.1.0"
+description = "A beautiful nested HTML test report"
+version = "0.5.0"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "Dan Ilan", email = "dan.ilan@q.ai" }]

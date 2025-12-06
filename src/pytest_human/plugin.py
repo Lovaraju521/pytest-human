@@ -219,7 +219,7 @@ class HtmlLogPlugin:
                 level=level,
                 repo=self._repo,
             ) as html_handler,
-            HtmlLogging.setup(html_handler, log_to_all=log_to_all),
+            HtmlLogging.setup(html_handler, log_to_all=log_to_all, level=level),
         ):
             item.stash[self.html_log_handler_key] = html_handler
             yield

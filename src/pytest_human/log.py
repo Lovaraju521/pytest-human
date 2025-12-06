@@ -31,30 +31,37 @@ class HtmlLogging:
 
     @staticmethod
     @contextmanager
-    def setup_single(handler: logging.Handler, namespace: str) -> Iterator[None]:
+    def setup_single(handler: logging.Handler, namespace: str, level: int) -> Iterator[None]:
         """Context manager to set and clear the HTML handler."""
         html_log = logging.getLogger(namespace)
         old_propagate = html_log.propagate
+        old_level = html_log.level
         html_log.propagate = False
+        html_log.setLevel(level)
         html_log.addHandler(handler)
         try:
             yield
         finally:
             html_log.propagate = old_propagate
             html_log.handlers.remove(handler)
+            html_log.setLevel(old_level)
 
     @staticmethod
     @contextmanager
-    def setup_multiple(handlers: logging.Handler, namespaces: list[str]) -> Iterator[None]:
+    def setup_multiple(
+        handlers: logging.Handler, namespaces: list[str], level: int
+    ) -> Iterator[None]:
         """Context manager to set and clear the HTML handler on multiple namespaces."""
         with ExitStack() as stack:
             for namespace in namespaces:
-                stack.enter_context(HtmlLogging.setup_single(handlers, namespace))
+                stack.enter_context(HtmlLogging.setup_single(handlers, namespace, level))
             yield
 
     @staticmethod
     @contextmanager
-    def setup(handler: logging.Handler, log_to_all: bool = False) -> Iterator[None]:
+    def setup(
+        handler: logging.Handler, level: int = logging.DEBUG, log_to_all: bool = False
+    ) -> Iterator[None]:
         """Context manager to setup HTML logging on human namespaces."""
 
         if log_to_all:
@@ -62,7 +69,7 @@ class HtmlLogging:
             return
 
         with HtmlLogging.setup_multiple(
-            handler, ["human.user.html", "human.tracing", "human.plugin"]
+            handler, ["human.user.html", "human.tracing", "human.plugin"], level=level
         ):
             yield
 

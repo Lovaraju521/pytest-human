@@ -14,14 +14,24 @@ from typing import Optional, cast
 import pytest
 from _pytest._code.code import ExceptionRepr
 from _pytest.nodes import Node
-from rich.pretty import pretty_repr
 
-from pytest_human._flags import is_output_to_test_tmp
+from pytest_human._flags import (
+    is_live_logging_enabled,
+    is_output_to_test_tmp,
+    is_quiet_mode_enabled,
+)
 from pytest_human.exceptions import HumanLogLevelWarning
 from pytest_human.html_handler import HtmlFileHandler, HtmlHandlerContext
 from pytest_human.human import Human
-from pytest_human.log import TestLogger, get_function_location, get_logger
+from pytest_human.log import (
+    _LOCATION_TAG,
+    _TRACED_TAG,
+    HtmlLogging,
+    TestLogger,
+    _get_internal_logger,
+)
 from pytest_human.repo import Repo
+from pytest_human.tracing import _format_result, get_function_location
 
 
 class HtmlLogPlugin:
@@ -53,28 +63,38 @@ class HtmlLogPlugin:
             config.pluginmanager.unregister(html_logger_plugin)
 
     @staticmethod
-    def _get_test_logger(item: pytest.Item) -> TestLogger:
-        return get_logger(item.name)
+    def _get_test_logger(item: Node) -> TestLogger:
+        """Get the test-specific logger."""
+        namespace = f"plugin.test.{item.name}"
+        return _get_internal_logger(namespace)
 
     @staticmethod
-    def _get_session_scoped_logs_dir(item: pytest.Item) -> Path:
-        """Get the session-scoped logs directory."""
-        path = item.session.config._tmp_path_factory.getbasetemp() / "session_logs"  # type: ignore # noqa: SLF001
+    def _ensure_default_log_dir(session_config: pytest.Config) -> Path:
+        """Create and return the default log dir exists.
+
+        This is a central session temp direcotry for all test logs.
+        """
+        path = session_config._tmp_path_factory.getbasetemp() / "session_logs"  # type: ignore # noqa: SLF001
         path.mkdir(parents=True, exist_ok=True)
         return path
 
-    @classmethod
-    def _session_scoped_test_log_path(cls, item: pytest.Item) -> Path:
-        """Get the session-scoped test log path."""
-        logs_dir = cls._get_session_scoped_logs_dir(item)
-        return cls._get_test_log_path(item, logs_dir)
-
     @staticmethod
-    def _get_test_log_path(item: pytest.Item, logs_dir: Path) -> Path:
-        """Create a test log path inside the given logs directory."""
-        logs_dir = logs_dir.resolve()
+    def _create_safe_filename(item: pytest.Item) -> str:
+        """Create a safe filename for the test item."""
         safe_test_name = re.sub(r"[^\w]", "_", item.name)[:35]
-        return logs_dir / f"{safe_test_name}.html"
+        return f"{safe_test_name}.html"
+
+    @classmethod
+    def _get_session_log_dir(cls, session_config: pytest.Config) -> Path:
+        """Get the session-scoped logs directory."""
+        if custom_dir := session_config.getoption("html_output_dir"):
+            custom_dir = custom_dir.resolve()
+            custom_dir.mkdir(parents=True, exist_ok=True)
+            return custom_dir
+
+        # if "html-use-test-tmp" is set, we still return this default dir
+        # because the log is created here first and moved later on.
+        return cls._ensure_default_log_dir(session_config)
 
     def _get_test_doc_string(self, item: pytest.Item) -> str | None:
         """Get the docstring of the test function, if any."""
@@ -111,8 +131,8 @@ class HtmlLogPlugin:
         cls,
         terminal: pytest.TerminalReporter,
         config: pytest.Config,
-        test_name: str,
         log_path: Path,
+        test_name: Optional[str] = None,
         flush: bool = False,
     ) -> None:
         """Log the HTML log path to the terminal."""
@@ -121,9 +141,15 @@ class HtmlLogPlugin:
             return
 
         terminal.ensure_newline()
-        terminal.write("🌎 Test ")
-        terminal.write(f"{test_name}", bold=True)
-        terminal.write(" HTML log at ")
+        terminal.write("🌎")
+
+        if test_name:
+            terminal.write(" Test ")
+            terminal.write(f"{test_name}", bold=True)
+            terminal.write(" HTML log at ")
+        else:
+            terminal.write(" HTML logs at ")
+
         terminal.write(f"{log_path.resolve().as_uri()}", bold=True, cyan=True)
         terminal.line("")
 
@@ -145,8 +171,8 @@ class HtmlLogPlugin:
         cls._print_test_report_location(
             terminal,
             item.config,
-            item.name,
             log_path,
+            item.name,
             flush,
         )
 
@@ -174,11 +200,6 @@ class HtmlLogPlugin:
 
         logging.warning(msg)
 
-    @classmethod
-    def _is_live_logging_enabled(cls, config: pytest.Config) -> bool:
-        """Check if live logging is enabled."""
-        return config.getini("log_cli")
-
     @pytest.hookimpl(tryfirst=True, hookwrapper=True)
     def pytest_runtest_protocol(
         self, item: pytest.Item, nextitem: Optional[pytest.Item]
@@ -188,33 +209,31 @@ class HtmlLogPlugin:
         log_path = self._get_log_path(item)
         level = self._get_log_level(item)
         self.validate_log_level(item)
+        log_to_all = item.config.getoption("html_log_to_all", default=False)
 
-        with HtmlHandlerContext(
-            filename=log_path,
-            title=item.name,
-            description=self._get_test_doc_string(item),
-            level=level,
-            repo=self._repo,
-        ) as html_handler:
+        with (
+            HtmlHandlerContext(
+                filename=log_path,
+                title=item.name,
+                description=self._get_test_doc_string(item),
+                level=level,
+                repo=self._repo,
+            ) as html_handler,
+            HtmlLogging.setup(html_handler, log_to_all=log_to_all, level=level),
+        ):
             item.stash[self.html_log_handler_key] = html_handler
             yield
 
         self.test_tmp_path = None
         self._test_reports_paths[item.name] = html_handler.path
 
-        if self._is_live_logging_enabled(item.config):
+        if is_live_logging_enabled(item.config):
             self._print_item_report_location(item, log_path, flush=True)
 
     def _get_log_path(self, item: pytest.Item) -> Path:
-        if custom_dir := item.config.getoption("html_output_dir"):
-            custom_dir.resolve().mkdir(parents=True, exist_ok=True)
-            return self._get_test_log_path(item, custom_dir)
-
-        if item.config.getoption("html_use_test_tmp"):
-            # Will be transferred on test setup to the correct location
-            return self._session_scoped_test_log_path(item)
-
-        return self._session_scoped_test_log_path(item)
+        parent_dir = self._get_session_log_dir(item.session.config)
+        filename = self._create_safe_filename(item)
+        return parent_dir / filename
 
     def _format_fixture_call(
         self, fixturedef: pytest.FixtureDef, request: pytest.FixtureRequest
@@ -225,8 +244,8 @@ class HtmlLogPlugin:
             if arg == "request":
                 arg_list.append("request")
                 continue
-            result = request.getfixturevalue(arg)
-            arg_list.append(f"{arg}={pretty_repr(result)}")
+            value = request.getfixturevalue(arg)
+            arg_list.append(f"{arg}={_format_result(value)}")
 
         s += ", ".join(arg_list)
 
@@ -241,21 +260,21 @@ class HtmlLogPlugin:
     ) -> Iterator[None]:
         """Wrap all fixture functions with the logging decorator."""
 
-        logger = get_logger(fixturedef.argname)
+        logger = _get_internal_logger("tracing.fixture.setup")
         call_str = self._format_fixture_call(fixturedef, request)
-        extra = {"_location": get_function_location(fixturedef.func)}
+        extra = {_LOCATION_TAG: get_function_location(fixturedef.func), _TRACED_TAG: True}
         with logger.span.debug(f"setup fixture {call_str}", highlight=True, extra=extra):
             result = yield
             try:
                 fix_result = result.get_result()
                 logger.debug(
-                    f"setup fixture {fixturedef.argname}() -> {pretty_repr(fix_result)}",
+                    f"setup fixture {fixturedef.argname}() -> {_format_result(fix_result)}",
                     highlight=True,
                     extra=extra,
                 )
             except Exception as e:
                 logger.error(
-                    f"setup fixture {fixturedef.argname}() !-> {pretty_repr(e)}",
+                    f"setup fixture {fixturedef.argname}() !-> {_format_result(e)}",
                     highlight=True,
                     extra=extra,
                 )
@@ -317,8 +336,8 @@ class HtmlLogPlugin:
             # fixture was already cleaned up, skipping log
             return
 
-        logger = get_logger(fixturedef.argname)
-        extra = {"_location": get_function_location(fixturedef.func)}
+        logger = _get_internal_logger("tracing.fixture.teardown")
+        extra = {_LOCATION_TAG: get_function_location(fixturedef.func), _TRACED_TAG: True}
         logger.debug(f"Tore down fixture {fixturedef.argname}()", highlight=True, extra=extra)
 
     @staticmethod
@@ -335,7 +354,7 @@ class HtmlLogPlugin:
         report: pytest.TestReport,
     ) -> None:
         """Log test exceptions in an error span."""
-        logger = get_logger(node.name)
+        logger = self._get_test_logger(node)
         excinfo = call.excinfo
         if excinfo is None:
             logger.error("Failed extracting exception info")
@@ -359,7 +378,7 @@ class HtmlLogPlugin:
 
         report.item = item
 
-        logger = get_logger(item.name)
+        logger = self._get_test_logger(item)
 
         # xfail exceptions do not show up in pytest_exception_interact
         if hasattr(report, "wasxfail") and call.excinfo is not None:
@@ -403,32 +422,51 @@ class HtmlLogPlugin:
         """Log all assertion comparisons to the HTML log."""
         test = config.stash[self.test_item_key]
         logger = self._get_test_logger(test)
-        logger.error(f"assert {pretty_repr(left)} {op} {pretty_repr(right)}", highlight=True)
+        logger.error(f"assert {_format_result(left)} {op} {_format_result(right)}", highlight=True)
 
         return None
 
     def pytest_internalerror(self, excrepr: ExceptionRepr) -> None:
         """Log internal pytest errors to the HTML log."""
-        logger = get_logger("pytest")
+        logger = _get_internal_logger("plugin.internalerror")
         logger.critical(f"Internal pytest error: {excrepr!s}", highlight=True)
+
+    def _print_locations_summary(
+        self, terminalreporter: pytest.TerminalReporter, config: pytest.Config
+    ) -> None:
+        """Log HTML log paths to the terminal summary."""
+
+        if self._test_reports_paths:
+            terminalreporter.write_sep("-", "pytest-human HTML log reports")
+
+        if not is_output_to_test_tmp(config) and len(self._test_reports_paths) > 1:
+            self._print_test_report_location(
+                terminalreporter,
+                config,
+                self._get_session_log_dir(config),
+            )
+            return
+
+        for test_name, log_path in self._test_reports_paths.items():
+            self._print_test_report_location(
+                terminalreporter,
+                config,
+                log_path,
+                test_name,
+            )
+
+        if self._test_reports_paths:
+            terminalreporter.write_sep("-")
 
     @pytest.hookimpl(trylast=True)
     def pytest_terminal_summary(
         self, terminalreporter: pytest.TerminalReporter, config: pytest.Config
     ) -> None:
         """Log all HTML log paths to the terminal summary."""
-        if self._test_reports_paths:
-            terminalreporter.write_sep("-", "pytest-human HTML log reports")
 
-        for test_name, log_path in self._test_reports_paths.items():
-            self._print_test_report_location(
-                terminalreporter,
-                config,
-                test_name,
-                log_path,
-            )
+        if is_quiet_mode_enabled(config) or is_live_logging_enabled(config):
+            return
 
-        if self._test_reports_paths:
-            terminalreporter.write_sep("-")
+        self._print_locations_summary(terminalreporter, config)
 
         terminalreporter.flush()

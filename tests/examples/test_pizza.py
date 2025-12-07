@@ -1,11 +1,13 @@
 """Example test showcasing pytest-human features"""
 
 import logging
+import os
 import time
 
 import pytest
 
-from pytest_human.log import get_logger, trace_public_api, traced
+from pytest_human.log import get_logger
+from pytest_human.tracing import trace_public_api, traced
 from tests.examples.external_delivery import ExternalDeliveryService
 
 log = get_logger(__name__)
@@ -69,8 +71,20 @@ def _trace_delivery_service():
         yield
 
 
-@pytest.mark.skip(reason="Example test, not meant to be run in CI")
-def test_full_pizza_order_workflow(human):
+@pytest.fixture
+def should_fail_test() -> bool:
+    """Used to generate failing logs for demo."""
+    return "SHOULD_FAIL_TEST" in os.environ
+
+
+@pytest.fixture
+def expected_toppings(should_fail_test: bool) -> list[str]:
+    if should_fail_test:
+        return ["pepperoni", "mushrooms", "onions"]
+    return ["pepperoni", "mushrooms", "olives"]
+
+
+def test_full_pizza_order_workflow(human, expected_toppings):
     """
     Tests the full workflow from ordering a pizza to delivery,
     showcasing all major pytest-human features.
@@ -115,7 +129,7 @@ def test_full_pizza_order_workflow(human):
         human.log.info(f"Dispatch info: {dispatch_info}", highlight=True)
         human.log.info("Verifying final order on pickup...")
         current_toppings = get_current_topping(pizza_in_progress)
-        expected_toppings = ["pepperoni", "mushrooms", "onions"]
+
         assert set(current_toppings) == set(expected_toppings), "Toppings mismatch at pickup!"
         human.log.info(f"Delivery status: {status}")
 

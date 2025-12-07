@@ -3,7 +3,7 @@ from collections.abc import Iterator
 import pytest
 from playwright.sync_api import Locator, LocatorAssertionsImpl, Page
 
-from pytest_human.log import trace_calls, trace_public_api
+from pytest_human.tracing import trace_calls, trace_public_api
 
 pytest_plugins = "pytester"
 
@@ -21,8 +21,10 @@ def _log_3rdparty_methods() -> Iterator[None]:
             pytest.Pytester.runpytest,
             pytest.Pytester.makepyfile,
         ),
-        trace_calls(Page.screenshot, suppress_return=True, suppress_self=False),
+        trace_calls(Page.screenshot, suppress_return=True, suppress_self=False, suppress_none=True),
         # this skips Page.screenshot as it is already defined above
-        trace_public_api(Page, Locator, LocatorAssertionsImpl, suppress_self=False),
+        trace_public_api(
+            Page, Locator, LocatorAssertionsImpl, suppress_self=False, suppress_none=True
+        ),
     ):
         yield

